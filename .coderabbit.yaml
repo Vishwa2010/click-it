@@ -1,0 +1,35 @@
+language: "en-US"
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  path_filters:
+    - "!node_modules/**"
+    - "!ios/**"
+    - "!android/**"
+    - "!.expo/**"
+    - "!assets/**"
+  path_instructions:
+    - path: "src/screens/**"
+      instructions: |
+        Check that all screens have loading AND error states — never leave blank.
+        Ensure no `any` types. Check navigation types are correct.
+    - path: "src/lib/supabase.ts"
+      instructions: "Ensure tokens are never exposed. Auth must use SecureStore, not AsyncStorage."
+    - path: "src/components/**"
+      instructions: "Check all props are typed. No inline styles that should be in StyleSheet."
+    - path: "**/*.ts"
+      instructions: "No `any` types ever. Strict TypeScript only."
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+      - "develop"
+
+chat:
+  auto_reply: true

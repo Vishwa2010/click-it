@@ -34,6 +34,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-secure-store',
     'expo-location',
     ['@rnmapbox/maps', { RNMapboxMapsAccessToken: process.env.MAPBOX_ACCESS_TOKEN ?? '' }],
-    ['expo-build-properties', { ios: { deploymentTarget: '15.1' } }],
+    ['expo-build-properties', { ios: { deploymentTarget: '16.4' } }],
   ],
 })

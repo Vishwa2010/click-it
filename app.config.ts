@@ -4,7 +4,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'ClickIt',
   slug: 'clickit',
-  owner: 'thandavms',
+  owner: 'hehe12345',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -21,6 +21,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: 'com.clickit.app',
   },
   extra: {
+    eas: { projectId: 'dc415d38-2a40-46f9-afbd-05563bab2046' },
     supabaseUrl: process.env.SUPABASE_URL,
     supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
     mapboxAccessToken: process.env.MAPBOX_ACCESS_TOKEN,

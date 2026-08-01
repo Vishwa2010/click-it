@@ -3,37 +3,115 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ClickIt — Find the Perfect Shot</title>
+  <title>ClickIt Support</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: #F5F0E8;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
+      color: #1A1714;
+      padding: 0 24px 60px;
+    }
+    header {
+      padding: 48px 0 40px;
+      border-bottom: 1px solid rgba(26,23,20,0.1);
+      margin-bottom: 40px;
+    }
+    header h1 { font-size: 32px; font-weight: 900; letter-spacing: -0.03em; }
+    header p { font-size: 15px; color: rgba(26,23,20,0.5); margin-top: 6px; }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    h2 { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(26,23,20,0.4); margin-bottom: 16px; margin-top: 40px; }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 0 rgba(26,23,20,0.08);
+    }
+    .item {
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(26,23,20,0.06);
+    }
+    .item:last-child { border-bottom: none; }
+    .item strong { display: block; font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .item span { font-size: 14px; color: rgba(26,23,20,0.55); line-height: 1.55; }
+    .contact {
+      margin-top: 40px;
+      background: #1A1714;
+      border-radius: 16px;
+      padding: 24px 20px;
+      color: #F5F0E8;
       text-align: center;
     }
-    h1 { font-size: 48px; font-weight: 900; letter-spacing: -0.03em; color: #1A1714; margin-bottom: 12px; }
-    p { font-size: 18px; color: rgba(26,23,20,0.6); max-width: 400px; line-height: 1.6; margin-bottom: 32px; }
-    a {
-      display: inline-block;
-      background: #1A1714;
+    .contact p { font-size: 14px; opacity: 0.6; margin-bottom: 12px; }
+    .contact a {
       color: #F5F0E8;
-      padding: 14px 28px;
-      border-radius: 12px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       text-decoration: none;
+      border-bottom: 1px solid rgba(245,240,232,0.3);
+      padding-bottom: 2px;
     }
   </style>
 </head>
 <body>
-  <h1>ClickIt</h1>
-  <p>Discover and share the best photo spots near you.</p>
-  <a href="https://apps.apple.com">Download on the App Store</a>
+  <div class="wrap">
+    <header>
+      <h1>ClickIt Support</h1>
+      <p>Get help with the ClickIt app</p>
+    </header>
+
+    <h2>Getting Started</h2>
+    <div class="card">
+      <div class="item">
+        <strong>How do I create an account?</strong>
+        <span>Open ClickIt and tap Sign Up. Enter your email and choose a password. You'll be taken straight to the map.</span>
+      </div>
+      <div class="item">
+        <strong>How do I find photo spots near me?</strong>
+        <span>The map on the home screen shows pins for all nearby photo spots. Tap any pin to see details, tips, and the best time to shoot.</span>
+      </div>
+      <div class="item">
+        <strong>How do I add a photo spot?</strong>
+        <span>Tap the + button on the map, drop a pin on the location, fill in the details, and submit. Your spot will appear on the map after approval.</span>
+      </div>
+    </div>
+
+    <h2>Account</h2>
+    <div class="card">
+      <div class="item">
+        <strong>I forgot my password</strong>
+        <span>On the sign in screen, tap "Forgot password?" and enter your email. You'll receive a reset link within a few minutes.</span>
+      </div>
+      <div class="item">
+        <strong>How do I change my username or profile photo?</strong>
+        <span>Go to your profile tab and tap Edit Profile. You can update your name, username, and profile photo from there.</span>
+      </div>
+      <div class="item">
+        <strong>How do I delete my account?</strong>
+        <span>Email us at support@clickitapp.com and we'll permanently delete your account and all associated data within 48 hours.</span>
+      </div>
+    </div>
+
+    <h2>Posts & Community</h2>
+    <div class="card">
+      <div class="item">
+        <strong>How do I post a photo?</strong>
+        <span>Tap the camera icon in the Community tab, choose or take a photo, add a caption, and hit Post.</span>
+      </div>
+      <div class="item">
+        <strong>Can I delete my posts?</strong>
+        <span>Yes — tap the three dots on any of your posts and select Delete.</span>
+      </div>
+      <div class="item">
+        <strong>How do I report inappropriate content?</strong>
+        <span>Tap the three dots on any post or spot and select Report. Our team reviews all reports within 24 hours.</span>
+      </div>
+    </div>
+
+    <div class="contact">
+      <p>Still need help? We're here.</p>
+      <a href="mailto:support@clickitapp.com">support@clickitapp.com</a>
+    </div>
+  </div>
 </body>
 </html>

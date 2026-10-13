@@ -15,6 +15,8 @@ import SpotCard from '../components/SpotCard'
 import ConditionsWidget from '../components/ConditionsWidget'
 import WarmMapStyle from '../components/map/WarmMapStyle'
 import NearbyCarousel, { CAROUSEL_HEIGHT, NearbySpot } from '../components/map/NearbyCarousel'
+import ClusterPin from '../components/map/ClusterPin'
+import { useSpotClusters, Viewport } from '../hooks/useSpotClusters'
 import { useLocation } from '../hooks/useLocation'
 import { openDirections } from '../lib/maps'
 import { distanceMeters, formatDistance } from '../lib/geo'
@@ -53,6 +55,8 @@ export default function MapScreen() {
 
   const [activeFilter, setActiveFilter] = useState('All')
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null)
+  const [viewport, setViewport] = useState<Viewport | null>(null)
+  const [styleReady, setStyleReady] = useState(false)
 
   const slideAnim = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const backdropAnim = useRef(new Animated.Value(0)).current
@@ -75,6 +79,8 @@ export default function MapScreen() {
     if (tags.length === 0) return MOCK_SPOTS
     return MOCK_SPOTS.filter((s) => s.tags.some((t) => (tags as string[]).includes(t)))
   }, [activeFilter])
+
+  const mapItems = useSpotClusters(filteredSpots, viewport)
 
   // Nearest first, measured from the user (or the default city when location is off)
   const nearby = useMemo<NearbySpot[]>(
@@ -119,6 +125,10 @@ export default function MapScreen() {
     [openSheet]
   )
 
+  function expandCluster(coordinate: [number, number], zoom: number) {
+    cameraRef.current?.setCamera({ centerCoordinate: coordinate, zoomLevel: zoom, animationDuration: 700, animationMode: 'easeTo' })
+  }
+
   function locateMe() {
     if (location) {
       cameraRef.current?.setCamera({ centerCoordinate: origin, zoomLevel: 14, animationDuration: 800, animationMode: 'flyTo' })
@@ -155,28 +165,46 @@ export default function MapScreen() {
         scaleBarEnabled={false}
         logoPosition={{ bottom: attributionBottom, left: 16 }}
         attributionPosition={{ bottom: attributionBottom, left: 104 }}
+        onDidFinishLoadingStyle={() => setStyleReady(true)}
+        onMapIdle={(state) => {
+          const { ne, sw } = state.properties.bounds
+          setViewport({ bbox: [sw[0], sw[1], ne[0], ne[1]], zoom: state.properties.zoom })
+        }}
       >
-        <WarmMapStyle />
+        {/* Existing-layer overrides only stick once the base style has loaded */}
+        {styleReady && <WarmMapStyle />}
         <MapboxGL.Camera ref={cameraRef} defaultSettings={{ centerCoordinate: origin, zoomLevel: 12 }} />
         {location && <MapboxGL.LocationPuck puckBearingEnabled={false} pulsing={{ isEnabled: true, color: colors.ink, radius: 28 }} />}
 
-        {filteredSpots.map((spot) => (
-          <MapboxGL.MarkerView
-            key={spot.id}
-            coordinate={[spot.longitude, spot.latitude]}
-            anchor={{ x: 0.5, y: 0.5 }}
-            allowOverlap
-          >
-            <Pressable
-              onPress={() => focusSpot(spot)}
-              hitSlop={hitSlop}
-              accessibilityRole="button"
-              accessibilityLabel={`${spot.name}, open spot card`}
+        {mapItems.map((item) =>
+          item.kind === 'cluster' ? (
+            <MapboxGL.MarkerView key={`c${item.id}`} coordinate={item.coordinate} anchor={{ x: 0.5, y: 0.5 }} allowOverlap>
+              <Pressable
+                onPress={() => expandCluster(item.coordinate, item.expansionZoom)}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.count} spots here, zoom in`}
+              >
+                <ClusterPin count={item.count} />
+              </Pressable>
+            </MapboxGL.MarkerView>
+          ) : (
+            <MapboxGL.MarkerView
+              key={item.spot.id}
+              coordinate={[item.spot.longitude, item.spot.latitude]}
+              anchor={{ x: 0.5, y: 0.5 }}
+              allowOverlap
             >
-              <SpotPin rank={spot.rank} selected={selectedSpot?.id === spot.id} />
-            </Pressable>
-          </MapboxGL.MarkerView>
-        ))}
+              <Pressable
+                onPress={() => focusSpot(item.spot)}
+                hitSlop={hitSlop}
+                accessibilityRole="button"
+                accessibilityLabel={`${item.spot.name}, open spot card`}
+              >
+                <SpotPin rank={item.spot.rank} selected={selectedSpot?.id === item.spot.id} />
+              </Pressable>
+            </MapboxGL.MarkerView>
+          )
+        )}
       </MapboxGL.MapView>
 
       <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} />

@@ -5,16 +5,16 @@ import { colors } from '../../theme'
 // so the map matches the app without a custom Mapbox Studio style.
 // Layer ids come from the light-v11 style; `existing` restyles a layer instead of adding one.
 const MAP = {
-  land: '#EFE6D5', // warm paper
-  park: '#D3D8B8', // sage
-  water: '#AFC1C0', // muted slate-teal
-  building: '#E0D2BD', // warm sand
-  road: '#FFFCF5', // near-white so streets read clearly
-  path: '#CDBFA9',
-  label: colors.ink, // ink labels, like the rest of the app
-  labelMinor: colors.ink2,
-  halo: '#EFE6D5',
-  boundary: '#B9A78E',
+  land: '#EEE7DB',
+  park: '#E0DCC6',
+  water: '#CBD3D1',
+  building: '#E4DACB',
+  road: '#FBF8F2',
+  path: '#D8CDBC',
+  label: colors.ink2,
+  labelMinor: colors.muted,
+  halo: '#EEE7DB',
+  boundary: '#C9BEAE',
 }
 
 const ROADS = ['road-simple', 'bridge-simple', 'tunnel-simple']
@@ -26,11 +26,10 @@ export default function WarmMapStyle() {
   return (
     <>
       <MapboxGL.BackgroundLayer id="land" existing style={{ backgroundColor: MAP.land }} />
-      <MapboxGL.FillLayer id="national-park" existing style={{ fillColor: MAP.park, fillOpacity: 0.9 }} />
-      <MapboxGL.FillLayer id="landuse" existing style={{ fillColor: MAP.park, fillOpacity: 0.85 }} />
+      <MapboxGL.FillLayer id="national-park" existing style={{ fillColor: MAP.park }} />
+      <MapboxGL.FillLayer id="landuse" existing style={{ fillColor: MAP.park }} />
       <MapboxGL.FillLayer id="water" existing style={{ fillColor: MAP.water }} />
       <MapboxGL.LineLayer id="waterway" existing style={{ lineColor: MAP.water }} />
-      <MapboxGL.FillLayer id="land-structure-polygon" existing style={{ fillColor: MAP.land }} />
       <MapboxGL.FillLayer id="building" existing style={{ fillColor: MAP.building, fillOutlineColor: MAP.path }} />
       {ROADS.map((id) => (
         <MapboxGL.LineLayer key={id} id={id} existing style={{ lineColor: MAP.road }} />

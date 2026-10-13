@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  RefreshControl,
   Alert,
   StyleSheet,
 } from 'react-native'
@@ -30,6 +31,7 @@ import Button from '../components/ui/Button'
 import Banner from '../components/ui/Banner'
 import TextField from '../components/ui/TextField'
 import { haptics } from '../lib/haptics'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
 
 type Props = StackScreenProps<RootStackParamList, 'EditProfile'>
 
@@ -58,38 +60,39 @@ export default function EditProfileScreen({ navigation }: Props) {
   const { status: nameStatus, markTaken } = useUsernameAvailability(form?.username ?? '')
 
   // interest_tags isn't on the User type, so load the editable fields fresh
-  useEffect(() => {
+  const loadFields = useCallback(async () => {
     if (!user) return
-    let cancelled = false
-    supabase
+    const { data, error: loadError } = await supabase
       .from('users')
       .select('username, bio, avatar_url, interest_tags')
       .eq('id', user.id)
       .maybeSingle()
-      .then(({ data, error: loadError }) => {
-        if (cancelled) return
-        if (loadError || !data) {
-          setError('Couldn’t load your profile. Go back and try again.')
-          return
-        }
-        const f: Form = {
-          username: data.username ?? '',
-          bio: data.bio ?? '',
-          avatarUri: data.avatar_url ?? '',
-          interests: (data.interest_tags ?? []) as SpotTag[],
-        }
-        setInitial(f)
-        setForm(f)
-      })
-    return () => {
-      cancelled = true
+    if (loadError || !data) {
+      setError('Couldn’t load your profile. Pull down to try again.')
+      return
     }
+    const f: Form = {
+      username: data.username ?? '',
+      bio: data.bio ?? '',
+      avatarUri: data.avatar_url ?? '',
+      interests: (data.interest_tags ?? []) as SpotTag[],
+    }
+    setError(null)
+    setInitial(f)
+    setForm(f)
   }, [user])
+
+  useEffect(() => {
+    loadFields()
+  }, [loadFields])
 
   const dirty = useMemo(
     () => !!form && !!initial && JSON.stringify(form) !== JSON.stringify(initial),
     [form, initial]
   )
+
+  // Pull to refresh reloads your saved profile — but never overwrites edits you haven't saved
+  const { refreshing, onRefresh } = usePullToRefresh(useCallback(() => (dirty ? Promise.resolve() : loadFields()), [dirty, loadFields]))
 
   // Never lose edits silently: confirm before leaving with unsaved changes
   useEffect(
@@ -214,8 +217,12 @@ export default function EditProfileScreen({ navigation }: Props) {
         <View style={styles.headerBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive">
+      <ScrollView
+        contentContainerStyle={styles.body}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />}
+      >
         {/* Photo */}
         <View style={styles.avatarBlock}>
           <Pressable onPress={pickAvatar} accessibilityRole="button" accessibilityLabel="Change profile photo">

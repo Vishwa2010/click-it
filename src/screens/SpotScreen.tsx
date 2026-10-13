@@ -25,7 +25,6 @@ import PhotoGallery from '../components/PhotoGallery'
 import Button from '../components/ui/Button'
 import Banner from '../components/ui/Banner'
 import { colors, fonts, radius, type, spotRankColors, hitSlop, card } from '../theme'
-import { usePullToRefresh } from '../hooks/usePullToRefresh'
 
 type Props = StackScreenProps<RootStackParamList, 'Spot'>
 
@@ -47,7 +46,6 @@ export default function SpotScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets()
   const { height } = useWindowDimensions()
   const { spot, photos, activeDuel, founderName, usernames, loading, error, reload } = useSpot(spotId)
-  const { refreshing, onRefresh } = usePullToRefresh(reload)
 
   const today = useMemo(() => new Date(), [])
   const shotWindow = useShotWindow(spot?.latitude ?? 0, spot?.longitude ?? 0, today)
@@ -91,7 +89,7 @@ export default function SpotScreen({ route, navigation }: Props) {
     <View style={styles.container}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} tintColor={colors.ink} />}
       >
         {spot.cover_photo_url ? (
           <Image

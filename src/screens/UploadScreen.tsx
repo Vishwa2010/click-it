@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, Text, ScrollView, Pressable, RefreshControl, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
+import { useEffect, useMemo, useState } from 'react'
+import { View, Text, ScrollView, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 import { ChevronLeft, Flag, ImagePlus } from 'lucide-react-native'
 import Button from '../components/ui/Button'
 import { CompositeScreenProps } from '@react-navigation/native'
@@ -22,7 +22,6 @@ import ConfirmStep, { PublishState } from './upload/ConfirmStep'
 import { UploadDraft, EMPTY_DRAFT, COLORS } from './upload/types'
 import { colors, fonts, hitSlop } from '../theme'
 import { haptics } from '../lib/haptics'
-import { usePullToRefresh } from '../hooks/usePullToRefresh'
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Upload'>,
@@ -46,8 +45,6 @@ export default function UploadScreen({ route, navigation }: Props) {
   useEffect(() => {
     loadSpots()
   }, [loadSpots])
-  // Pulling refreshes nearby spots for the "Add to [spot]?" check; your draft stays as it is
-  const { refreshing, onRefresh } = usePullToRefresh(useCallback(() => loadSpots(true), [loadSpots]))
   const prefillSpot = useMemo(() => spots.find((s) => s.id === prefillSpotId) ?? null, [spots, prefillSpotId])
 
   const [step, setStep] = useState<Step>(1)
@@ -189,7 +186,6 @@ export default function UploadScreen({ route, navigation }: Props) {
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 120 }]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.text} />}
       >
         {step === 1 && <PhotoStep draft={draft} onChange={update} />}
         {step === 2 && (

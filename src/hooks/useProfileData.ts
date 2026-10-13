@@ -16,7 +16,7 @@ interface ProfileData {
 const EMPTY: ProfileData = { founded: [], photos: [], earnedBadgeIds: new Set(), loading: true, error: null }
 
 // Loads everything the Profile screen shows, and refreshes each time the tab comes into focus
-export function useProfileData(userId: string | undefined): ProfileData & { reload: () => Promise<void> } {
+export function useProfileData(userId: string | undefined): ProfileData & { reload: () => void } {
   const setUser = useUserStore((s) => s.setUser)
   const [state, setState] = useState<ProfileData>(EMPTY)
 

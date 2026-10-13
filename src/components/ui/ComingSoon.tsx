@@ -1,9 +1,7 @@
-import { View, Text, Pressable, ScrollView, RefreshControl, StyleSheet } from 'react-native'
+import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ChevronLeft, LucideIcon } from 'lucide-react-native'
 import { colors, radius, type, hitSlop } from '../../theme'
-import { useCallback } from 'react'
-import { usePullToRefresh } from '../../hooks/usePullToRefresh'
 
 interface Props {
   Icon: LucideIcon
@@ -16,14 +14,8 @@ interface Props {
 // Placeholder for screens not built yet — never leave a screen blank (CLAUDE.md)
 export default function ComingSoon({ Icon, eyebrow, title, body, onBack }: Props) {
   const insets = useSafeAreaInsets()
-  // Nothing to reload yet, but pulling should still feel alive like every other screen
-  const { refreshing, onRefresh } = usePullToRefresh(useCallback(async () => undefined, []))
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingTop: insets.top + (onBack ? 8 : 32), paddingHorizontal: 24, flexGrow: 1 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />}
-    >
+    <View style={[styles.container, { paddingTop: insets.top + (onBack ? 8 : 32) }]}>
       {onBack && (
         <Pressable
           onPress={onBack}
@@ -42,12 +34,12 @@ export default function ComingSoon({ Icon, eyebrow, title, body, onBack }: Props
         <Icon size={20} color={colors.ink} />
         <Text style={type.smallStrong}>Coming soon</Text>
       </View>
-    </ScrollView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.paper },
+  container: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: 24 },
   title: { marginTop: 10, marginBottom: 14 },
   back: { width: 44, height: 44, justifyContent: 'center', marginLeft: -8, marginBottom: 16 },
   pressed: { opacity: 0.6 },

@@ -27,7 +27,6 @@ import ProfileWorldMap from '../components/profile/ProfileWorldMap'
 import BadgeGrid from '../components/profile/BadgeGrid'
 import Banner from '../components/ui/Banner'
 import Button from '../components/ui/Button'
-import { usePullToRefresh } from '../hooks/usePullToRefresh'
 
 type Nav = CompositeNavigationProp<BottomTabNavigationProp<TabParamList, 'Profile'>, StackNavigationProp<RootStackParamList>>
 
@@ -50,8 +49,7 @@ export default function ProfileScreen() {
   const navigation = useNavigation<Nav>()
   const { width } = useWindowDimensions()
   const user = useUserStore((s) => s.user)
-  const { founded, photos, earnedBadgeIds, error, reload } = useProfileData(user?.id)
-  const { refreshing, onRefresh } = usePullToRefresh(reload)
+  const { founded, photos, earnedBadgeIds, loading, error, reload } = useProfileData(user?.id)
   const [signingOut, setSigningOut] = useState(false)
 
   // Signing out is explicit and confirmed (CLAUDE.md: never act without confirmation)
@@ -107,7 +105,7 @@ export default function ProfileScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 48 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />}
+      refreshControl={<RefreshControl refreshing={loading && !!founded.length} onRefresh={reload} tintColor={colors.ink} />}
     >
       {/* Cover: personal world map */}
       <View>

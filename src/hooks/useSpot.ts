@@ -24,7 +24,7 @@ const INITIAL: SpotState = {
   error: null,
 }
 
-export function useSpot(spotId: string): SpotState & { reload: () => Promise<void> } {
+export function useSpot(spotId: string): SpotState & { reload: () => void } {
   // Show what the map already knows instantly, then fill in photos/names from the network
   const cached = useSpotsStore((s) => s.spots.find((x) => x.id === spotId) ?? null)
   const [state, setState] = useState<SpotState>({ ...INITIAL, spot: cached })

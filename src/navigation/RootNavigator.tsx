@@ -10,6 +10,7 @@ import PhotographerScreen from '../screens/PhotographerScreen'
 import RouteBuilderScreen from '../screens/RouteBuilderScreen'
 import ShotDuelScreen from '../screens/ShotDuelScreen'
 import ARCompassScreen from '../screens/ARCompassScreen'
+import EditProfileScreen from '../screens/EditProfileScreen'
 import { supabase } from '../lib/supabase'
 import { useUserStore } from '../store/useUserStore'
 import { User } from '../types/user'
@@ -115,6 +116,7 @@ export default function RootNavigator() {
         <Stack.Screen name="RouteBuilder" component={RouteBuilderScreen} />
         <Stack.Screen name="ShotDuel" component={ShotDuelScreen} />
         <Stack.Screen name="ARCompass" component={ARCompassScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )

@@ -17,7 +17,8 @@ import { supabase } from '../../lib/supabase'
 import { useUserStore } from '../../store/useUserStore'
 import { SpotTag } from '../../types/spot'
 import { User } from '../../types/user'
-import { C, Coords, MAX_INTERESTS, usernameRules, UsernameStatus, useReducedMotion } from './onboarding/shared'
+import { C, Coords, MAX_INTERESTS, useReducedMotion } from './onboarding/shared'
+import { useUsernameAvailability } from '../../hooks/useUsernameAvailability'
 import HookPage from './onboarding/HookPage'
 import MissedPage from './onboarding/MissedPage'
 import AddressPage from './onboarding/AddressPage'
@@ -42,7 +43,7 @@ export default function OnboardingScreen() {
 
   const [index, setIndex] = useState(0)
   const [username, setUsername] = useState('')
-  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle')
+  const { status: usernameStatus, markTaken } = useUsernameAvailability(username)
   const [usernameError, setUsernameError] = useState<string | null>(null)
   const [selected, setSelected] = useState<SpotTag[]>([])
   const [location, setLocation] = useState<LocationChoice>('undecided')
@@ -64,28 +65,8 @@ export default function OnboardingScreen() {
     Animated.timing(slide, { toValue: 1, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start()
   }, [index, slide, reduced])
 
-  // Live username availability, debounced while typing
-  useEffect(() => {
-    setUsernameError(null)
-    const rules = usernameRules(username)
-    if (!rules.length || !rules.chars) {
-      setUsernameStatus('idle')
-      return
-    }
-    setUsernameStatus('checking')
-    let cancelled = false
-    const timer = setTimeout(async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      const { data, error } = await supabase.from('users').select('id').eq('username', username).maybeSingle()
-      if (cancelled) return
-      if (error) setUsernameStatus('error')
-      else setUsernameStatus(data && data.id !== authUser?.id ? 'taken' : 'available')
-    }, 450)
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-    }
-  }, [username])
+  // A new name clears any 'just taken' message from a failed save
+  useEffect(() => setUsernameError(null), [username])
 
   function go(next: number) {
     direction.current = next > index ? 1 : -1
@@ -151,7 +132,7 @@ export default function OnboardingScreen() {
     if (dbError) {
       if (dbError.code === '23505') {
         // Someone grabbed the name since we checked — send them back to pick another
-        setUsernameStatus('taken')
+        markTaken()
         setUsernameError('Someone just took that username. Please pick another.')
         go(FIRST_SETUP_PAGE)
       } else {

@@ -51,14 +51,8 @@ export const INTERESTS: { tag: SpotTag; label: string; Icon: LucideIcon }[] = [
 
 export const MAX_INTERESTS = 3
 
-export type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'error'
-
-export function usernameRules(name: string) {
-  return {
-    length: name.length >= 3 && name.length <= 30,
-    chars: name.length > 0 && /^[a-zA-Z0-9_]+$/.test(name),
-  }
-}
+export { usernameRules } from '../../../hooks/useUsernameAvailability'
+export type { UsernameStatus } from '../../../hooks/useUsernameAvailability'
 
 export type { Coords } from '../../../lib/goldenHour'
 import type { Coords } from '../../../lib/goldenHour'

@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native'
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import { StackNavigationProp } from '@react-navigation/stack'
-import { Flag, Globe2, Building, Image as ImageIcon, Settings, Trophy, MapPinPlus, ImageOff, Camera } from 'lucide-react-native'
+import { Flag, Globe2, Building, Image as ImageIcon, Settings, Trophy, MapPinPlus, ImageOff, Camera, Pencil } from 'lucide-react-native'
 import { TabParamList, RootStackParamList } from '../navigation/types'
 import { useUserStore } from '../store/useUserStore'
 import { useProfileData } from '../hooks/useProfileData'
@@ -70,7 +70,7 @@ export default function ProfileScreen() {
 
   function openSettings() {
     Alert.alert('Settings', undefined, [
-      { text: 'Edit profile', onPress: () => Alert.alert('Coming soon', 'Editing your bio and photo is on the way.') },
+      { text: 'Edit profile', onPress: () => navigation.navigate('EditProfile') },
       { text: 'Sign out', style: 'destructive', onPress: confirmSignOut },
       { text: 'Cancel', style: 'cancel' },
     ])
@@ -142,6 +142,13 @@ export default function ProfileScreen() {
             {since && <Text style={type.caption}>Exploring since {since}</Text>}
           </View>
           {user.bio ? <Text style={[type.body, styles.bio]}>{user.bio}</Text> : null}
+          <Button
+            label="Edit profile"
+            variant="secondary"
+            onPress={() => navigation.navigate('EditProfile')}
+            icon={<Pencil size={16} color={colors.ink} />}
+            style={styles.editBtn}
+          />
         </View>
 
         {error && <Banner tone="error" message={error} />}
@@ -297,6 +304,7 @@ const styles = StyleSheet.create({
   rank: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1.5, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   rankText: { fontSize: 12, fontFamily: fonts.bold },
   bio: { textAlign: 'center', marginTop: 10 },
+  editBtn: { marginTop: 16, minHeight: 44, alignSelf: 'stretch' },
   xpCard: { padding: 18, gap: 10 },
   xpTop: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   track: { height: 10, borderRadius: 5, backgroundColor: colors.sunk, overflow: 'hidden' },

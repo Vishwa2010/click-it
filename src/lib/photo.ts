@@ -16,11 +16,11 @@ async function fileSize(uri: string): Promise<number> {
   return blob.size
 }
 
-// Resizes to at most 2048px on the long edge and re-encodes as JPEG until it is ≤ 2MB.
+// Resizes to at most `maxEdge` px (2048 by default) on the long edge and re-encodes as JPEG until it is ≤ 2MB.
 // Re-encoding also drops all EXIF metadata from the uploaded file.
-export async function preparePhotoForUpload(uri: string, width: number, height: number): Promise<PreparedPhoto> {
+export async function preparePhotoForUpload(uri: string, width: number, height: number, maxEdge = MAX_EDGE): Promise<PreparedPhoto> {
   const longEdge = Math.max(width, height)
-  const scale = longEdge > MAX_EDGE ? MAX_EDGE / longEdge : 1
+  const scale = longEdge > maxEdge ? maxEdge / longEdge : 1
   const size = width >= height ? { width: Math.round(width * scale) } : { height: Math.round(height * scale) }
 
   const context = ImageManipulator.manipulate(uri)

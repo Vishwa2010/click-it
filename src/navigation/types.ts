@@ -21,4 +21,5 @@ export type RootStackParamList = {
   RouteBuilder: undefined
   ShotDuel: { duelId?: string }
   ARCompass: undefined
+  EditProfile: undefined
 }

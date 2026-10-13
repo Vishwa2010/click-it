@@ -1,14 +1,18 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { Swords } from 'lucide-react-native'
+import { StackScreenProps } from '@react-navigation/stack'
+import ComingSoon from '../components/ui/ComingSoon'
+import { RootStackParamList } from '../navigation/types'
 
-export default function ShotDuelScreen() {
+type Props = StackScreenProps<RootStackParamList, 'ShotDuel'>
+
+export default function ShotDuelScreen({ navigation }: Props) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Shot Duel</Text>
-    </View>
+    <ComingSoon
+      onBack={() => navigation.goBack()}
+      Icon={Swords}
+      eyebrow="HEAD TO HEAD"
+      title="Shot Duels."
+      body="Challenge another photographer at the same spot. The community votes on the better shot."
+    />
   )
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A1A2E', alignItems: 'center', justifyContent: 'center' },
-  text: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold' },
-})

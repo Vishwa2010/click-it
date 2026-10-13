@@ -1,14 +1,13 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { Compass } from 'lucide-react-native'
+import ComingSoon from '../components/ui/ComingSoon'
 
 export default function ExploreScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Explore</Text>
-    </View>
+    <ComingSoon
+      Icon={Compass}
+      eyebrow="DISCOVER"
+      title="Explore."
+      body="Spots with perfect light right now, look-alike Spot Twins around the world, and what’s trending this week."
+    />
   )
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A1A2E', alignItems: 'center', justifyContent: 'center' },
-  text: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold' },
-})

@@ -4,18 +4,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'ClickIt',
   slug: 'clickit',
+  scheme: 'clickit',
   owner: 'hehe12345',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
-  userInterfaceStyle: 'dark',
+  userInterfaceStyle: 'light',
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.clickit.app',
   },
   android: {
     adaptiveIcon: {
-      backgroundColor: '#1A1A2E',
+      backgroundColor: '#F5F0E8',
       foregroundImage: './assets/adaptive-icon.png',
     },
     package: 'com.clickit.app',
@@ -35,5 +36,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-location',
     ['@rnmapbox/maps', { RNMapboxMapsAccessToken: process.env.MAPBOX_ACCESS_TOKEN ?? '' }],
     ['expo-build-properties', { ios: { deploymentTarget: '16.4' } }],
+    [
+      'expo-image-picker',
+      {
+        photosPermission: 'ClickIt needs your photos so you can pin where a shot was taken.',
+        cameraPermission: 'ClickIt uses the camera so you can capture a shot and pin its spot.',
+        microphonePermission: false,
+      },
+    ],
+    './plugins/withIos27Fixes',
   ],
 })

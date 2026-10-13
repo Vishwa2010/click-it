@@ -1,18 +1,18 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { Camera } from 'lucide-react-native'
 import { StackScreenProps } from '@react-navigation/stack'
+import ComingSoon from '../components/ui/ComingSoon'
 import { RootStackParamList } from '../navigation/types'
 
 type Props = StackScreenProps<RootStackParamList, 'Photographer'>
 
-export default function PhotographerScreen({ route }: Props) {
+export default function PhotographerScreen({ navigation }: Props) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Photographer: {route.params.userId}</Text>
-    </View>
+    <ComingSoon
+      onBack={() => navigation.goBack()}
+      Icon={Camera}
+      eyebrow="PHOTOGRAPHER"
+      title="Their spots."
+      body="Every spot this photographer founded, their best shots, badges and Explorer rank."
+    />
   )
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A1A2E', alignItems: 'center', justifyContent: 'center' },
-  text: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold' },
-})

@@ -1,4 +1,5 @@
-import { Spot } from '../types/spot'
+import { Spot, SpotPhoto } from '../types/spot'
+import { Duel } from '../types/duel'
 
 export const MOCK_SPOTS: Spot[] = [
   {
@@ -144,5 +145,67 @@ export const MOCK_SPOTS: Spot[] = [
     best_time_end: '09:00',
     gear_recommendation: '70-200mm f/2.8',
     created_at: '2023-12-15T06:00:00Z',
+  },
+]
+
+export interface MockPhotographer {
+  id: string
+  username: string
+}
+
+export const MOCK_PHOTOGRAPHERS: MockPhotographer[] = [
+  { id: 'user-1', username: 'brooklynframes' },
+  { id: 'user-2', username: 'nightowl.la' },
+  { id: 'user-3', username: 'bigsur_light' },
+  { id: 'user-4', username: 'parkwalker' },
+  { id: 'user-5', username: 'slotcanyon' },
+  { id: 'user-6', username: 'skylinehunter' },
+  { id: 'user-7', username: 'desertnomad' },
+  { id: 'user-8', username: 'fogchaser' },
+]
+
+const MOCK_GEAR: { camera: string; lens: string }[] = [
+  { camera: 'Sony A7 IV', lens: '24-70mm f/2.8' },
+  { camera: 'Canon R6', lens: '16-35mm f/4' },
+  { camera: 'Fujifilm X-T5', lens: '35mm f/1.4' },
+  { camera: 'Nikon Z6 II', lens: '70-200mm f/2.8' },
+  { camera: 'iPhone 17 Pro', lens: '24mm main' },
+]
+
+// Hours (local) the mock photos were taken at — spread across the day
+const MOCK_HOURS = [6, 7, 9, 13, 17, 18, 19, 21, 22, 5]
+
+function buildMockPhotos(spot: Spot, index: number): SpotPhoto[] {
+  return MOCK_HOURS.map((hour, i) => {
+    const gear = MOCK_GEAR[(i + index) % MOCK_GEAR.length]
+    const day = String(1 + ((i * 3 + index) % 27)).padStart(2, '0')
+    const hh = String(hour).padStart(2, '0')
+    return {
+      id: `${spot.id}-photo-${i}`,
+      spot_id: spot.id,
+      user_id: MOCK_PHOTOGRAPHERS[(i + index) % MOCK_PHOTOGRAPHERS.length].id,
+      photo_url: '',
+      taken_at: `2026-0${1 + (i % 9)}-${day}T${hh}:15:00`,
+      camera: gear.camera,
+      lens: gear.lens,
+      upvotes: ((i + 1) * 37 + index * 11) % 240,
+      created_at: `2026-0${1 + (i % 9)}-${day}T${hh}:40:00Z`,
+    }
+  })
+}
+
+export const MOCK_SPOT_PHOTOS: SpotPhoto[] = MOCK_SPOTS.flatMap(buildMockPhotos)
+
+export const MOCK_DUELS: Duel[] = [
+  {
+    id: 'duel-1',
+    spot_id: '1',
+    challenger_id: 'user-1',
+    opponent_id: 'user-6',
+    challenger_votes: 48,
+    opponent_votes: 41,
+    status: 'voting',
+    expires_at: '2026-12-31T23:59:00Z',
+    created_at: '2026-10-01T12:00:00Z',
   },
 ]

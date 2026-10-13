@@ -9,7 +9,7 @@ export type AuthStackParamList = {
 export type TabParamList = {
   Map: undefined
   Explore: undefined
-  Upload: undefined
+  Upload: { spotId?: string } | undefined
   Challenges: undefined
   Profile: undefined
 }

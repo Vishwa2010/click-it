@@ -1,14 +1,13 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { Trophy } from 'lucide-react-native'
+import ComingSoon from '../components/ui/ComingSoon'
 
 export default function ChallengesScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Challenges</Text>
-    </View>
+    <ComingSoon
+      Icon={Trophy}
+      eyebrow="COMPETE"
+      title="Challenges."
+      body="Weekly missions, progress bars and a monthly leaderboard. Finish them to earn XP and badges."
+    />
   )
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A1A2E', alignItems: 'center', justifyContent: 'center' },
-  text: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold' },
-})

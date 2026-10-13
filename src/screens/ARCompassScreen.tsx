@@ -1,14 +1,18 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { ScanLine } from 'lucide-react-native'
+import { StackScreenProps } from '@react-navigation/stack'
+import ComingSoon from '../components/ui/ComingSoon'
+import { RootStackParamList } from '../navigation/types'
 
-export default function ARCompassScreen() {
+type Props = StackScreenProps<RootStackParamList, 'ARCompass'>
+
+export default function ARCompassScreen({ navigation }: Props) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>AR Compass</Text>
-    </View>
+    <ComingSoon
+      onBack={() => navigation.goBack()}
+      Icon={ScanLine}
+      eyebrow="AR COMPASS"
+      title="Point & find."
+      body="Hold up your camera and see nearby spots pinned in the real world around you."
+    />
   )
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A1A2E', alignItems: 'center', justifyContent: 'center' },
-  text: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold' },
-})

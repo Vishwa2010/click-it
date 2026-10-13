@@ -1,14 +1,18 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { Route } from 'lucide-react-native'
+import { StackScreenProps } from '@react-navigation/stack'
+import ComingSoon from '../components/ui/ComingSoon'
+import { RootStackParamList } from '../navigation/types'
 
-export default function RouteBuilderScreen() {
+type Props = StackScreenProps<RootStackParamList, 'RouteBuilder'>
+
+export default function RouteBuilderScreen({ navigation }: Props) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Route Builder</Text>
-    </View>
+    <ComingSoon
+      onBack={() => navigation.goBack()}
+      Icon={Route}
+      eyebrow="PLAN"
+      title="Photo walks."
+      body="Build an optimised route through nearby spots, timed to hit each one in its best light."
+    />
   )
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1A1A2E', alignItems: 'center', justifyContent: 'center' },
-  text: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold' },
-})

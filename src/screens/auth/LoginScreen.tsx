@@ -1,22 +1,19 @@
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  ScrollView,
-} from 'react-native'
+import { View, Text, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import { useState } from 'react'
 import { StackScreenProps } from '@react-navigation/stack'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AuthStackParamList } from '../../navigation/types'
 import { supabase } from '../../lib/supabase'
+import { colors, fonts, type, hitSlop } from '../../theme'
+import Button from '../../components/ui/Button'
+import TextField from '../../components/ui/TextField'
+import Banner from '../../components/ui/Banner'
+import BrandMark from '../../components/ui/BrandMark'
 
 type Props = StackScreenProps<AuthStackParamList, 'Login'>
 
 export default function LoginScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -33,137 +30,95 @@ export default function LoginScreen({ navigation }: Props) {
       email: email.trim(),
       password,
     })
+    if (authError) {
+      const msg = authError.message.toLowerCase()
+      if (msg.includes('email not confirmed')) {
+        setError('Please confirm your email first — check your inbox for the link from ClickIt.')
+      } else if (msg.includes('invalid login credentials')) {
+        // Supabase gives the same error for both cases — ask the database which one it is
+        const { data: registered, error: lookupError } = await supabase.rpc('email_registered', {
+          p_email: email.trim(),
+        })
+        if (lookupError) {
+          setError('Email or password is incorrect.')
+        } else if (registered) {
+          setError('Incorrect password. Please try again.')
+        } else {
+          setError('No account found with this email. Tap Create an account below.')
+        }
+      } else {
+        setError(authError.message)
+      }
+    }
     setLoading(false)
-    if (authError) setError(authError.message)
     // On success, RootNavigator's onAuthStateChange listener will switch the tree
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <Text style={styles.logo}>📷</Text>
-          <Text style={styles.appName}>ClickIt</Text>
-          <Text style={styles.tagline}>Find the shot. Own the spot.</Text>
+        <BrandMark />
+
+        <View style={styles.hero}>
+          <Text style={type.display}>Welcome{'\n'}back.</Text>
+          <Text style={[type.body, styles.sub]}>Find the shot. Own the spot.</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.title}>Welcome back</Text>
+        <View style={styles.form}>
+          {error && <Banner tone="error" message={error} />}
 
-          {error && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
+            label="Email"
             value={email}
             onChangeText={setEmail}
             placeholder="you@example.com"
-            placeholderTextColor="#A8B2C1"
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
+            textContentType="emailAddress"
+            returnKeyType="next"
           />
-
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
+            label="Password"
             value={password}
             onChangeText={setPassword}
-            placeholder="••••••••"
-            placeholderTextColor="#A8B2C1"
+            placeholder="Your password"
             secureTextEntry
             autoComplete="password"
+            textContentType="password"
+            returnKeyType="go"
+            onSubmitEditing={handleLogin}
           />
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.buttonText}>Log In</Text>
-            )}
-          </TouchableOpacity>
+          <Button label="Log in" onPress={handleLogin} loading={loading} style={styles.submit} />
         </View>
 
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.navigate('SignUp')}
-          style={styles.switchRow}
+          style={({ pressed }) => [styles.switchRow, pressed && styles.pressed]}
+          hitSlop={hitSlop}
+          accessibilityRole="link"
         >
-          <Text style={styles.switchText}>
-            Don&apos;t have an account?{' '}
-            <Text style={styles.switchLink}>Sign up</Text>
+          <Text style={type.small}>
+            New to ClickIt? <Text style={styles.switchLink}>Create an account</Text>
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#1A1A2E' },
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 48,
-  },
-  header: { alignItems: 'center', marginBottom: 40 },
-  logo: { fontSize: 56, marginBottom: 8 },
-  appName: { color: '#FF6B35', fontSize: 32, fontWeight: 'bold', letterSpacing: 1 },
-  tagline: { color: '#A8B2C1', fontSize: 14, marginTop: 4 },
-  card: {
-    backgroundColor: '#0F3460',
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  title: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  errorBanner: {
-    backgroundColor: 'rgba(231,76,60,0.15)',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(231,76,60,0.3)',
-  },
-  errorText: { color: '#E74C3C', fontSize: 14 },
-  label: { color: '#A8B2C1', fontSize: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: {
-    backgroundColor: '#16213E',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: '#FFFFFF',
-    fontSize: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  button: {
-    backgroundColor: '#FF6B35',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  switchRow: { alignItems: 'center', marginTop: 24 },
-  switchText: { color: '#A8B2C1', fontSize: 14 },
-  switchLink: { color: '#FF6B35', fontWeight: '600' },
+  flex: { flex: 1, backgroundColor: colors.paper },
+  container: { flexGrow: 1, paddingHorizontal: 24 },
+  hero: { marginTop: 56, marginBottom: 36 },
+  sub: { marginTop: 12 },
+  form: { gap: 18 },
+  submit: { marginTop: 6 },
+  switchRow: { alignItems: 'center', marginTop: 28, paddingVertical: 8 },
+  switchLink: { color: colors.ink, fontFamily: fonts.bold, textDecorationLine: 'underline' },
+  pressed: { opacity: 0.6 },
 })

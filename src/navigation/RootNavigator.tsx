@@ -13,6 +13,7 @@ import ARCompassScreen from '../screens/ARCompassScreen'
 import { supabase } from '../lib/supabase'
 import { useUserStore } from '../store/useUserStore'
 import { User } from '../types/user'
+import { colors } from '../theme'
 
 const Stack = createStackNavigator<RootStackParamList & { Auth: undefined }>()
 
@@ -52,13 +53,15 @@ export default function RootNavigator() {
       })
 
     // Listen for subsequent auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_OUT' || !session) {
-          reset()
-          return
-        }
-        setSession(session)
+    // Supabase holds an auth lock while this callback runs, so calling the database directly
+    // inside it can deadlock — defer the profile lookup until the callback has returned
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        reset()
+        return
+      }
+      setSession(session)
+      setTimeout(async () => {
         const profile = await loadProfile(session.user.id)
         if (!profile || !profile.username) {
           setAuthStatus('onboarding')
@@ -66,8 +69,8 @@ export default function RootNavigator() {
           setUser(profile)
           setAuthStatus('authenticated')
         }
-      }
-    )
+      }, 0)
+    })
 
     return () => subscription.unsubscribe()
   }, [setSession, setUser, setAuthStatus, reset])
@@ -75,14 +78,16 @@ export default function RootNavigator() {
   if (authStatus === 'loading') {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#FF6B35" />
+        <ActivityIndicator size="large" color={colors.ink} />
       </View>
     )
   }
 
+  // Each status gets its own keyed NavigationContainer: a navigator only reads its initial
+  // route on mount, so without a fresh tree, login → onboarding would stay on the Login screen
   if (authStatus === 'unauthenticated') {
     return (
-      <NavigationContainer>
+      <NavigationContainer key="auth">
         <AuthNavigator />
       </NavigationContainer>
     )
@@ -90,18 +95,18 @@ export default function RootNavigator() {
 
   if (authStatus === 'onboarding') {
     return (
-      <NavigationContainer>
+      <NavigationContainer key="onboarding">
         <AuthNavigator initialRoute="Onboarding" />
       </NavigationContainer>
     )
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer key="app">
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
-          cardStyle: { backgroundColor: '#1A1A2E' },
+          cardStyle: { backgroundColor: colors.paper },
         }}
       >
         <Stack.Screen name="Tabs" component={TabNavigator} />
@@ -116,5 +121,5 @@ export default function RootNavigator() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, backgroundColor: '#1A1A2E', justifyContent: 'center', alignItems: 'center' },
+  loading: { flex: 1, backgroundColor: colors.paper, justifyContent: 'center', alignItems: 'center' },
 })

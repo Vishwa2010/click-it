@@ -2,12 +2,15 @@ import { createClient } from '@supabase/supabase-js'
 import * as SecureStore from 'expo-secure-store'
 import Constants from 'expo-constants'
 
+// `||` rather than `??` so blank values in .env (e.g. `SUPABASE_URL=`) also fall back
 const supabaseUrl =
-  (Constants.expoConfig?.extra?.supabaseUrl as string | undefined) ?? 'https://placeholder.supabase.co'
+  (Constants.expoConfig?.extra?.supabaseUrl as string | undefined) || 'https://placeholder.supabase.co'
 const supabaseAnonKey =
-  (Constants.expoConfig?.extra?.supabaseAnonKey as string | undefined) ?? 'placeholder-anon-key'
+  (Constants.expoConfig?.extra?.supabaseAnonKey as string | undefined) || 'placeholder-anon-key'
 
-if (!Constants.expoConfig?.extra?.supabaseUrl) {
+export const isSupabaseConfigured = Boolean(Constants.expoConfig?.extra?.supabaseUrl)
+
+if (!isSupabaseConfigured) {
   console.warn('[ClickIt] SUPABASE_URL not set — auth and data features will not work.')
 }
 

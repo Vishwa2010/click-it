@@ -35,10 +35,11 @@ function getSunTimes(lat: number, lon: number, date: Date): ShotWindow {
   const sunriseHour = solarNoon - hourAngle / 15
   const sunsetHour = solarNoon + hourAngle / 15
 
+  // `hour` is in UTC (solar noon is derived from longitude), so anchor at UTC midnight
   const toDate = (hour: number): Date => {
     const result = new Date(date)
-    result.setHours(Math.floor(hour), Math.round((hour % 1) * 60), 0, 0)
-    return result
+    result.setUTCHours(0, 0, 0, 0)
+    return new Date(result.getTime() + Math.round(hour * 60) * 60000)
   }
 
   return {

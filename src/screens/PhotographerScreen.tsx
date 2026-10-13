@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { View, Text, Image, ScrollView, Pressable, ActivityIndicator, StyleSheet } from 'react-native'
+import { View, Text, Image, ScrollView, Pressable, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native'
 import { StackScreenProps } from '@react-navigation/stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ChevronLeft, Trophy, Flag, Globe2, Building, Image as ImageIcon, ImageOff } from 'lucide-react-native'
@@ -12,6 +12,7 @@ import ProfileWorldMap from '../components/profile/ProfileWorldMap'
 import BadgeGrid from '../components/profile/BadgeGrid'
 import Banner from '../components/ui/Banner'
 import Button from '../components/ui/Button'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
 
 type Props = StackScreenProps<RootStackParamList, 'Photographer'>
 
@@ -50,6 +51,7 @@ export default function PhotographerScreen({ route, navigation }: Props) {
   useEffect(() => {
     load()
   }, [load])
+  const { refreshing, onRefresh } = usePullToRefresh(load)
 
   const back = (
     <Pressable
@@ -89,7 +91,10 @@ export default function PhotographerScreen({ route, navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />}
+      >
         <ProfileWorldMap spots={spots} height={COVER + insets.top} />
         <View style={styles.body}>
           <View style={styles.identity}>

@@ -13,6 +13,7 @@ import { Spot } from '../types/spot'
 import { colors, fonts, radius, type, card, spotRankColors } from '../theme'
 import Banner from '../components/ui/Banner'
 import Button from '../components/ui/Button'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
 
 type Nav = CompositeNavigationProp<BottomTabNavigationProp<TabParamList, 'Explore'>, StackNavigationProp<RootStackParamList>>
 
@@ -48,6 +49,7 @@ export default function ExploreScreen() {
   const status = useSpotsStore((s) => s.status)
   const error = useSpotsStore((s) => s.error)
   const load = useSpotsStore((s) => s.load)
+  const { refreshing, onRefresh } = usePullToRefresh(useCallback(() => load(true), [load]))
 
   useFocusEffect(
     useCallback(() => {
@@ -73,7 +75,7 @@ export default function ExploreScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: 40 }}
-      refreshControl={<RefreshControl refreshing={status === 'loading' && spots.length > 0} onRefresh={() => load(true)} tintColor={colors.ink} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />}
     >
       <View style={styles.pad}>
         <Text style={type.eyebrow}>Discover</Text>

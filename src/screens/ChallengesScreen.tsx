@@ -11,6 +11,7 @@ import { colors, fonts, radius, type, card, explorerRankColors } from '../theme'
 import Banner from '../components/ui/Banner'
 import Button from '../components/ui/Button'
 import { haptics } from '../lib/haptics'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
 
 interface Joined {
   progress: number
@@ -67,6 +68,8 @@ export default function ChallengesScreen() {
     }, [load])
   )
 
+  const { refreshing, onRefresh } = usePullToRefresh(load)
+
   async function join(id: string) {
     setJoining(id)
     const { error: joinError } = await supabase.from('user_challenges').insert({ challenge_id: id })
@@ -88,7 +91,7 @@ export default function ChallengesScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingTop: insets.top + 20, paddingHorizontal: 20, paddingBottom: 40, gap: 16 }}
-      refreshControl={<RefreshControl refreshing={loading && challenges.length + leaders.length > 0} onRefresh={load} tintColor={colors.ink} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.ink} />}
     >
       <View>
         <Text style={type.eyebrow}>Compete</Text>

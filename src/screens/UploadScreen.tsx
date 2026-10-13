@@ -7,7 +7,9 @@ import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { StackScreenProps } from '@react-navigation/stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TabParamList, RootStackParamList } from '../navigation/types'
-import { MOCK_SPOTS } from '../lib/mockData'
+import { useSpotsStore } from '../store/useSpotsStore'
+import { supabase } from '../lib/supabase'
+import { User } from '../types/user'
 import { findNearbySpot } from '../lib/geo'
 import { preparePhotoForUpload } from '../lib/photo'
 import { publishSpotPhoto } from '../lib/publish'
@@ -19,6 +21,7 @@ import DetailsStep from './upload/DetailsStep'
 import ConfirmStep, { PublishState } from './upload/ConfirmStep'
 import { UploadDraft, EMPTY_DRAFT, COLORS } from './upload/types'
 import { colors, fonts, hitSlop } from '../theme'
+import { haptics } from '../lib/haptics'
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<TabParamList, 'Upload'>,
@@ -31,10 +34,17 @@ const STEP_TITLES: Record<Step, string> = { 1: 'Photo', 2: 'Spot details', 3: 'C
 export default function UploadScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets()
   const user = useUserStore((s) => s.user)
+  const setUser = useUserStore((s) => s.setUser)
+  const loadSpots = useSpotsStore((s) => s.load)
+  // Captured when publishing, so the celebration reflects the state before the new spot counted
+  const [firstSpot, setFirstSpot] = useState(false)
   const prefillSpotId = route.params?.spotId
 
   // Spots come from mock data until the map is wired to Supabase
-  const spots = MOCK_SPOTS
+  const spots = useSpotsStore((s) => s.spots)
+  useEffect(() => {
+    loadSpots()
+  }, [loadSpots])
   const prefillSpot = useMemo(() => spots.find((s) => s.id === prefillSpotId) ?? null, [spots, prefillSpotId])
 
   const [step, setStep] = useState<Step>(1)
@@ -104,8 +114,21 @@ export default function UploadScreen({ route, navigation }: Props) {
               difficulty: draft.difficulty,
             },
       })
-      setPublish({ status: 'done', spotId: result.spotId, xp: xpReward })
+      setFirstSpot(result.isNewSpot && (user?.spots_founded ?? 0) === 0)
+      // XP is awarded by the database; read back what was actually earned
+      let earned: number = xpReward
+      if (user) {
+        const { data: fresh } = await supabase.from('users').select('*').eq('id', user.id).maybeSingle()
+        if (fresh) {
+          earned = Math.max(0, (fresh as User).xp - user.xp) || xpReward
+          setUser(fresh as User)
+        }
+      }
+      loadSpots(true)
+      haptics.success()
+      setPublish({ status: 'done', spotId: result.spotId, xp: earned })
     } catch (e) {
+      haptics.warning()
       setPublish({ status: 'error', message: e instanceof Error ? e.message : 'Publishing failed. Please try again.' })
     }
   }
@@ -119,7 +142,6 @@ export default function UploadScreen({ route, navigation }: Props) {
   }
 
   if (publish.status === 'done') {
-    const firstSpot = isNew && (user?.spots_founded ?? 0) === 0
     return (
       <View style={[styles.container, styles.doneWrap, { paddingTop: insets.top + 24 }]}>
         <View style={styles.doneIcon}>
@@ -163,6 +185,7 @@ export default function UploadScreen({ route, navigation }: Props) {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 120 }]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
         {step === 1 && <PhotoStep draft={draft} onChange={update} />}
         {step === 2 && (

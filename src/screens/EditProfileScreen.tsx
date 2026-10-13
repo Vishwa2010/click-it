@@ -29,6 +29,7 @@ import { colors, fonts, radius, type, hitSlop, TOUCH } from '../theme'
 import Button from '../components/ui/Button'
 import Banner from '../components/ui/Banner'
 import TextField from '../components/ui/TextField'
+import { haptics } from '../lib/haptics'
 
 type Props = StackScreenProps<RootStackParamList, 'EditProfile'>
 
@@ -153,6 +154,7 @@ export default function EditProfileScreen({ navigation }: Props) {
 
   function toggleInterest(tag: SpotTag) {
     if (!form) return
+    haptics.select()
     const has = form.interests.includes(tag)
     if (!has && form.interests.length >= MAX_INTERESTS) return
     update({ interests: has ? form.interests.filter((t) => t !== tag) : [...form.interests, tag] })
@@ -176,6 +178,7 @@ export default function EditProfileScreen({ navigation }: Props) {
         .select('*')
         .single()
       if (saveError) {
+        haptics.warning()
         if (saveError.code === '23505') {
           markTaken()
           setError('Someone just took that username. Pick another.')
@@ -185,6 +188,7 @@ export default function EditProfileScreen({ navigation }: Props) {
         return
       }
       setUser(data as User)
+      haptics.success()
       saved.current = true
       navigation.goBack()
     } catch (e) {
@@ -210,7 +214,8 @@ export default function EditProfileScreen({ navigation }: Props) {
         <View style={styles.headerBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive">
         {/* Photo */}
         <View style={styles.avatarBlock}>
           <Pressable onPress={pickAvatar} accessibilityRole="button" accessibilityLabel="Change profile photo">

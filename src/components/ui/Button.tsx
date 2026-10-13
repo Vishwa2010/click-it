@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import { Pressable, Text, ActivityIndicator, StyleSheet, View, StyleProp, ViewStyle } from 'react-native'
 import { colors, radius, type, TOUCH } from '../../theme'
+import { haptics } from '../../lib/haptics'
 
 type Variant = 'primary' | 'secondary' | 'ghost'
 
@@ -21,7 +22,10 @@ export default function Button({ label, onPress, variant = 'primary', disabled, 
   const fg = variant === 'primary' ? colors.onInk : colors.ink
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        if (variant === 'primary') haptics.tap()
+        onPress()
+      }}
       disabled={inactive}
       accessibilityRole="button"
       accessibilityLabel={label}

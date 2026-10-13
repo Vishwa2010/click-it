@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef } from 'react'
-import { View, Text, Image, Pressable, FlatList, StyleSheet, ListRenderItemInfo } from 'react-native'
+import { View, Text, Image, Pressable, FlatList, StyleSheet, ListRenderItemInfo, Animated, Easing } from 'react-native'
 import { ImageOff, Clock, MapPinPlus } from 'lucide-react-native'
 import { Spot } from '../../types/spot'
 import { RANK_LABELS } from '../SpotCard'
@@ -12,6 +12,7 @@ export interface NearbySpot {
 }
 
 interface Props {
+  loading?: boolean
   items: NearbySpot[]
   selectedId: string | null
   filterLabel: string
@@ -65,7 +66,36 @@ const NearbyCard = memo(function NearbyCard({ item, selected, onSelect }: {
   )
 })
 
-export default function NearbyCarousel({ items, selectedId, filterLabel, onSelect, onPinFirst }: Props) {
+// Placeholder cards while spots load (skill: loading-states — reserve the space, don't jump)
+function SkeletonCards() {
+  const pulse = useRef(new Animated.Value(0.5)).current
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.5, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ])
+    )
+    loop.start()
+    return () => loop.stop()
+  }, [pulse])
+  return (
+    <View style={styles.skeletonRow} accessibilityLabel="Loading nearby spots">
+      {[0, 1].map((i) => (
+        <Animated.View key={i} style={[styles.card, { opacity: pulse }]}>
+          <View style={[styles.thumb, styles.thumbEmpty]} />
+          <View style={styles.body}>
+            <View style={[styles.bar, { width: '70%' }]} />
+            <View style={[styles.bar, { width: '45%' }]} />
+            <View style={[styles.bar, { width: '55%' }]} />
+          </View>
+        </Animated.View>
+      ))}
+    </View>
+  )
+}
+
+export default function NearbyCarousel({ loading, items, selectedId, filterLabel, onSelect, onPinFirst }: Props) {
   const listRef = useRef<FlatList<NearbySpot>>(null)
 
   // Keep the selected spot's card in view when a pin is tapped on the map
@@ -82,6 +112,8 @@ export default function NearbyCarousel({ items, selectedId, filterLabel, onSelec
     [selectedId, onSelect]
   )
 
+  if (loading) return <SkeletonCards />
+
   if (items.length === 0) {
     return (
       <View style={styles.emptyWrap}>
@@ -94,7 +126,7 @@ export default function NearbyCarousel({ items, selectedId, filterLabel, onSelec
             <MapPinPlus size={22} color={colors.onInk} />
           </View>
           <View style={styles.body}>
-            <Text style={styles.name}>No {filterLabel.toLowerCase()} spots yet</Text>
+            <Text style={styles.name}>{filterLabel === 'All' ? 'No spots on the map yet' : `No ${filterLabel.toLowerCase()} spots yet`}</Text>
             <Text style={styles.meta}>Pin the first one and become its Founder →</Text>
           </View>
         </Pressable>
@@ -122,6 +154,8 @@ export default function NearbyCarousel({ items, selectedId, filterLabel, onSelec
 const styles = StyleSheet.create({
   list: { paddingHorizontal: 16, gap: GAP },
   emptyWrap: { paddingHorizontal: 16 },
+  skeletonRow: { flexDirection: 'row', gap: GAP, paddingHorizontal: 16 },
+  bar: { height: 10, borderRadius: 5, backgroundColor: colors.sunk },
   card: {
     width: CARD_WIDTH,
     height: CAROUSEL_HEIGHT,

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Spot, SpotPhoto } from '../types/spot'
 import { Duel } from '../types/duel'
-import { MOCK_SPOTS, MOCK_SPOT_PHOTOS, MOCK_DUELS, MOCK_PHOTOGRAPHERS } from '../lib/mockData'
+import { fetchSpot, fetchSpotPhotos, fetchUsernames, fetchActiveDuel } from '../lib/spotsApi'
+import { useSpotsStore } from '../store/useSpotsStore'
 
 interface SpotState {
   spot: Spot | null
@@ -23,31 +24,35 @@ const INITIAL: SpotState = {
   error: null,
 }
 
-// Mock data for now — swap the body of load() for Supabase queries once the backend is connected
 export function useSpot(spotId: string): SpotState & { reload: () => void } {
-  const [state, setState] = useState<SpotState>(INITIAL)
+  // Show what the map already knows instantly, then fill in photos/names from the network
+  const cached = useSpotsStore((s) => s.spots.find((x) => x.id === spotId) ?? null)
+  const [state, setState] = useState<SpotState>({ ...INITIAL, spot: cached })
 
-  const load = useCallback(() => {
-    setState(INITIAL)
+  const load = useCallback(async () => {
+    setState((s) => ({ ...s, loading: true, error: null }))
     try {
-      const spot = MOCK_SPOTS.find((s) => s.id === spotId) ?? null
+      const [spot, photos, activeDuel] = await Promise.all([fetchSpot(spotId), fetchSpotPhotos(spotId), fetchActiveDuel(spotId)])
       if (!spot) {
-        setState({ ...INITIAL, loading: false, error: 'This spot could not be found.' })
+        setState({ ...INITIAL, loading: false, error: 'This spot could not be found. It may have been removed.' })
         return
       }
-      const usernames = Object.fromEntries(MOCK_PHOTOGRAPHERS.map((p) => [p.id, p.username]))
+      const usernames = await fetchUsernames([
+        spot.founder_id,
+        ...photos.map((p) => p.user_id),
+        ...(activeDuel ? [activeDuel.challenger_id, activeDuel.opponent_id] : []),
+      ])
       setState({
         spot,
-        photos: MOCK_SPOT_PHOTOS.filter((p) => p.spot_id === spotId),
-        activeDuel:
-          MOCK_DUELS.find((d) => d.spot_id === spotId && (d.status === 'active' || d.status === 'voting')) ?? null,
+        photos,
+        activeDuel,
         founderName: usernames[spot.founder_id] ?? null,
         usernames,
         loading: false,
         error: null,
       })
     } catch {
-      setState({ ...INITIAL, loading: false, error: 'Something went wrong loading this spot.' })
+      setState((s) => ({ ...s, loading: false, error: 'Couldn’t load this spot. Check your connection and try again.' }))
     }
   }, [spotId])
 

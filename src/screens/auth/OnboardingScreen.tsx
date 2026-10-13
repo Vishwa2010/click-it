@@ -221,7 +221,8 @@ export default function OnboardingScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive">
         <Animated.View
           key={page}
           style={{

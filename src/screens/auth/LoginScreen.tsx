@@ -59,6 +59,7 @@ export default function LoginScreen({ navigation }: Props) {
       <ScrollView
         contentContainerStyle={[styles.container, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
         <BrandMark />
 

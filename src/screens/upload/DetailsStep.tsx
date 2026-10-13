@@ -6,6 +6,7 @@ import { RANK_COLORS } from '../../components/SpotPin'
 import { RANK_LABELS } from '../../components/SpotCard'
 import { UploadDraft, TAG_OPTIONS, DIFFICULTY_OPTIONS, COLORS } from './types'
 import { colors, fonts } from '../../theme'
+import { haptics } from '../../lib/haptics'
 
 interface Props {
   draft: UploadDraft
@@ -20,7 +21,10 @@ function Pill({ label, active, onPress }: { label: string; active: boolean; onPr
   return (
     <Pressable
       style={({ pressed }) => [styles.pill, active && styles.pillActive, pressed && styles.pressed]}
-      onPress={onPress}
+      onPress={() => {
+        haptics.select()
+        onPress()
+      }}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: active }}
     >

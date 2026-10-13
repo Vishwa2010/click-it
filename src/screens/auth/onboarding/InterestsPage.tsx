@@ -4,6 +4,7 @@ import { Check, LucideIcon } from 'lucide-react-native'
 import { SpotTag } from '../../../types/spot'
 import { C, shared, INTERESTS, MAX_INTERESTS } from './shared'
 import { colors, fonts } from '../../../theme'
+import { haptics } from '../../../lib/haptics'
 
 interface Props {
   selected: SpotTag[]
@@ -37,6 +38,7 @@ function Pill({ label, Icon, active, disabled, onPress }: {
     <Animated.View style={{ transform: [{ scale }] }}>
       <Pressable
         onPress={() => {
+          haptics.select()
           bounce()
           onPress()
         }}

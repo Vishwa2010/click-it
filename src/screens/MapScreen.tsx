@@ -1,14 +1,17 @@
 import { View, Pressable, StyleSheet, Animated, Alert, Linking } from 'react-native'
 import { Plus, LocateFixed } from 'lucide-react-native'
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { CompositeNavigationProp, useNavigation } from '@react-navigation/native'
+import { CompositeNavigationProp, useNavigation, useFocusEffect } from '@react-navigation/native'
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import { StackNavigationProp } from '@react-navigation/stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MapboxGL from '@rnmapbox/maps'
 import { TabParamList, RootStackParamList } from '../navigation/types'
 import { Spot, SpotTag } from '../types/spot'
-import { MOCK_SPOTS } from '../lib/mockData'
+import { useSpotsStore } from '../store/useSpotsStore'
+import { logNavigation } from '../lib/spotsApi'
+import Banner from '../components/ui/Banner'
+import Button from '../components/ui/Button'
 import SpotPin from '../components/SpotPin'
 import FilterBar from '../components/FilterBar'
 import SpotCard from '../components/SpotCard'
@@ -21,6 +24,7 @@ import { useLocation } from '../hooks/useLocation'
 import { openDirections } from '../lib/maps'
 import { distanceMeters, formatDistance } from '../lib/geo'
 import { colors, hitSlop } from '../theme'
+import { haptics } from '../lib/haptics'
 
 const DEFAULT_COORDS: [number, number] = [-74.006, 40.7128]
 const SPOT_ZOOM = 14
@@ -55,6 +59,17 @@ export default function MapScreen() {
 
   const [activeFilter, setActiveFilter] = useState('All')
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null)
+  const spots = useSpotsStore((s) => s.spots)
+  const spotsStatus = useSpotsStore((s) => s.status)
+  const spotsError = useSpotsStore((s) => s.error)
+  const loadSpots = useSpotsStore((s) => s.load)
+
+  // Refresh when the tab comes back into view (cheap: skipped if loaded in the last minute)
+  useFocusEffect(
+    useCallback(() => {
+      loadSpots()
+    }, [loadSpots])
+  )
   const [viewport, setViewport] = useState<Viewport | null>(null)
   const [styleReady, setStyleReady] = useState(false)
 
@@ -76,9 +91,9 @@ export default function MapScreen() {
 
   const filteredSpots = useMemo(() => {
     const tags = FILTER_TAGS[activeFilter] ?? []
-    if (tags.length === 0) return MOCK_SPOTS
-    return MOCK_SPOTS.filter((s) => s.tags.some((t) => (tags as string[]).includes(t)))
-  }, [activeFilter])
+    if (tags.length === 0) return spots
+    return spots.filter((s) => s.tags.some((t) => (tags as string[]).includes(t)))
+  }, [activeFilter, spots])
 
   const mapItems = useSpotClusters(filteredSpots, viewport)
 
@@ -112,6 +127,7 @@ export default function MapScreen() {
 
   const focusSpot = useCallback(
     (spot: Spot) => {
+      haptics.tap()
       cameraRef.current?.setCamera({
         centerCoordinate: [spot.longitude, spot.latitude],
         zoomLevel: SPOT_ZOOM,
@@ -126,6 +142,7 @@ export default function MapScreen() {
   )
 
   function expandCluster(coordinate: [number, number], zoom: number) {
+    haptics.tap()
     cameraRef.current?.setCamera({ centerCoordinate: coordinate, zoomLevel: zoom, animationDuration: 700, animationMode: 'easeTo' })
   }
 
@@ -142,6 +159,7 @@ export default function MapScreen() {
 
   function handleNavigate() {
     if (!selectedSpot) return
+    logNavigation(selectedSpot.id)
     openDirections(selectedSpot.latitude, selectedSpot.longitude)
   }
 
@@ -233,7 +251,14 @@ export default function MapScreen() {
       </Pressable>
 
       <View style={[styles.carousel, { bottom: carouselBottom }]} pointerEvents="box-none">
+        {spotsStatus === 'error' && (
+          <View style={styles.errorWrap}>
+            <Banner tone="error" message={spotsError ?? 'Couldn’t load spots.'} />
+            <Button label="Retry" variant="secondary" onPress={() => loadSpots(true)} style={styles.retry} />
+          </View>
+        )}
         <NearbyCarousel
+          loading={spotsStatus === 'loading' && spots.length === 0}
           items={nearby}
           selectedId={selectedSpot?.id ?? null}
           filterLabel={activeFilter}
@@ -290,6 +315,8 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.75 },
   carousel: { position: 'absolute', left: 0, right: 0 },
+  errorWrap: { marginHorizontal: 16, marginBottom: 10, gap: 8, backgroundColor: colors.card, borderRadius: 16, padding: 8 },
+  retry: { minHeight: 44 },
   backdrop: {
     ...StyleSheet.absoluteFill,
     backgroundColor: colors.scrim,

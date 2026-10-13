@@ -2,6 +2,7 @@ import { View, ScrollView, Pressable, Text, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Layers, Leaf, Building, Landmark, Sunset, Gem, Antenna, LucideIcon } from 'lucide-react-native'
 import { colors, fonts, radius } from '../theme'
+import { haptics } from '../lib/haptics'
 
 export const FILTERS = ['All', 'Nature', 'Urban', 'Architecture', 'Golden Hour', 'Hidden Gems', 'Rooftop']
 
@@ -32,7 +33,10 @@ export default function FilterBar({ activeFilter, onFilterChange }: Props) {
           return (
             <Pressable
               key={filter}
-              onPress={() => onFilterChange(filter)}
+              onPress={() => {
+                haptics.select()
+                onFilterChange(filter)
+              }}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
               style={({ pressed }) => [styles.pill, active && styles.pillActive, pressed && styles.pressed]}

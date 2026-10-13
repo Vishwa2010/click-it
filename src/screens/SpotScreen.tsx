@@ -6,6 +6,7 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  RefreshControl,
   StyleSheet,
   useWindowDimensions,
 } from 'react-native'
@@ -17,10 +18,12 @@ import { SpotPhoto } from '../types/spot'
 import { useSpot } from '../hooks/useSpot'
 import { useShotWindow } from '../hooks/useShotWindow'
 import { openDirections } from '../lib/maps'
+import { logNavigation } from '../lib/spotsApi'
 import { RANK_LABELS, DIFFICULTY_LABELS } from '../components/SpotCard'
 import ShotWindowCard from '../components/ShotWindowCard'
 import PhotoGallery from '../components/PhotoGallery'
 import Button from '../components/ui/Button'
+import Banner from '../components/ui/Banner'
 import { colors, fonts, radius, type, spotRankColors, hitSlop, card } from '../theme'
 
 type Props = StackScreenProps<RootStackParamList, 'Spot'>
@@ -60,7 +63,8 @@ export default function SpotScreen({ route, navigation }: Props) {
     </Pressable>
   )
 
-  if (loading) {
+  // A spot opened from the map renders instantly from cache; only block when there's nothing to show
+  if (loading && !spot) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={colors.ink} />
@@ -68,7 +72,7 @@ export default function SpotScreen({ route, navigation }: Props) {
     )
   }
 
-  if (error || !spot) {
+  if (!spot) {
     return (
       <View style={styles.centered}>
         {backButton}
@@ -83,7 +87,10 @@ export default function SpotScreen({ route, navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={reload} tintColor={colors.ink} />}
+      >
         {spot.cover_photo_url ? (
           <Image
             source={{ uri: spot.cover_photo_url }}
@@ -99,6 +106,7 @@ export default function SpotScreen({ route, navigation }: Props) {
         )}
 
         <View style={styles.body}>
+          {error && <Banner tone="error" message={error} />}
           {activeDuel && (
             <Pressable
               style={({ pressed }) => [styles.duelBanner, pressed && styles.pressed]}
@@ -180,7 +188,15 @@ export default function SpotScreen({ route, navigation }: Props) {
       {backButton}
 
       <View style={[styles.actions, { paddingBottom: insets.bottom + 12 }]}>
-        <Button label="Navigate" variant="secondary" onPress={() => openDirections(spot.latitude, spot.longitude)} style={styles.action} />
+        <Button
+          label="Navigate"
+          variant="secondary"
+          onPress={() => {
+            logNavigation(spot.id)
+            openDirections(spot.latitude, spot.longitude)
+          }}
+          style={styles.action}
+        />
         <Button
           label="I shot this"
           onPress={() => navigation.navigate('Tabs', { screen: 'Upload', params: { spotId: spot.id } })}

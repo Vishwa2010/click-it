@@ -34,7 +34,8 @@ export async function fetchSpots(): Promise<Spot[]> {
 
 export async function fetchSpot(id: string): Promise<Spot | null> {
   if (!isSupabaseConfigured) throw notConfigured()
-  const { data, error } = await supabase.from('spots_public').select(SPOT_COLUMNS).eq('id', id).maybeSingle()
+  // '*' picks up newer columns (city/country) when the database has them
+  const { data, error } = await supabase.from('spots_public').select('*').eq('id', id).maybeSingle()
   if (error) throw new Error(error.message)
   return data ? normaliseSpot(data as Record<string, unknown>) : null
 }
@@ -74,4 +75,43 @@ export async function fetchActiveDuel(spotId: string): Promise<Duel | null> {
 export async function logNavigation(spotId: string): Promise<void> {
   if (!isSupabaseConfigured) return
   await supabase.from('spot_navigations').insert({ spot_id: spotId })
+}
+
+// ── Social actions (rules enforced by RLS + triggers in Supabase) ──
+
+export async function fetchMyUpvotes(photoIds: string[], userId: string): Promise<Set<string>> {
+  if (photoIds.length === 0) return new Set()
+  const { data } = await supabase.from('photo_upvotes').select('photo_id').eq('user_id', userId).in('photo_id', photoIds)
+  return new Set((data ?? []).map((r: { photo_id: string }) => r.photo_id))
+}
+
+export async function setUpvote(photoId: string, on: boolean): Promise<boolean> {
+  const { error } = on
+    ? await supabase.from('photo_upvotes').insert({ photo_id: photoId })
+    : await supabase.from('photo_upvotes').delete().eq('photo_id', photoId)
+  return !error
+}
+
+export async function isSpotSaved(spotId: string, userId: string): Promise<boolean> {
+  const { data } = await supabase.from('spot_saves').select('spot_id').eq('spot_id', spotId).eq('user_id', userId).maybeSingle()
+  return !!data
+}
+
+export async function setSpotSaved(spotId: string, on: boolean): Promise<boolean> {
+  const { error } = on
+    ? await supabase.from('spot_saves').insert({ spot_id: spotId })
+    : await supabase.from('spot_saves').delete().eq('spot_id', spotId)
+  return !error
+}
+
+export async function isFollowing(targetId: string, userId: string): Promise<boolean> {
+  const { data } = await supabase.from('followers').select('following_id').eq('follower_id', userId).eq('following_id', targetId).maybeSingle()
+  return !!data
+}
+
+export async function setFollowing(targetId: string, on: boolean): Promise<boolean> {
+  const { error } = on
+    ? await supabase.from('followers').insert({ following_id: targetId })
+    : await supabase.from('followers').delete().eq('following_id', targetId)
+  return !error
 }

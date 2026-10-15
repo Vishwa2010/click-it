@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native'
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import { StackNavigationProp } from '@react-navigation/stack'
-import { Flag, Globe2, Building, Image as ImageIcon, Settings, Trophy, MapPinPlus, ImageOff, Camera, Pencil } from 'lucide-react-native'
+import { Flag, Globe2, Building, Image as ImageIcon, Settings, Trophy, MapPinPlus, ImageOff, Camera, Pencil, Bookmark } from 'lucide-react-native'
 import { TabParamList, RootStackParamList } from '../navigation/types'
 import { useUserStore } from '../store/useUserStore'
 import { useProfileData } from '../hooks/useProfileData'
@@ -49,7 +49,7 @@ export default function ProfileScreen() {
   const navigation = useNavigation<Nav>()
   const { width } = useWindowDimensions()
   const user = useUserStore((s) => s.user)
-  const { founded, photos, earnedBadgeIds, loading, error, reload } = useProfileData(user?.id)
+  const { founded, saved, photos, earnedBadgeIds, loading, error, reload } = useProfileData(user?.id)
   const [signingOut, setSigningOut] = useState(false)
 
   // Signing out is explicit and confirmed (CLAUDE.md: never act without confirmation)
@@ -220,6 +220,42 @@ export default function ProfileScreen() {
                 style={({ pressed }) => [card, styles.spotCard, pressed && styles.pressed]}
                 accessibilityRole="button"
                 accessibilityLabel={`${spot.name}, ${RANK_LABELS[spot.rank]}`}
+              >
+                {spot.cover_photo_url ? (
+                  <Image source={{ uri: spot.cover_photo_url }} style={styles.spotImg} resizeMode="cover" />
+                ) : (
+                  <View style={[styles.spotImg, styles.imgEmpty]}>
+                    <ImageOff size={20} color={colors.muted} />
+                  </View>
+                )}
+                <Text style={styles.spotName} numberOfLines={1}>{spot.name}</Text>
+                <Text style={type.caption}>{spot.photo_count} photos</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        )}
+
+        {/* Saved spots */}
+        <SectionHeader title="Saved spots" count={saved.length} />
+        {saved.length === 0 ? (
+          <View style={[card, styles.emptyCard]}>
+            <View style={[styles.emptyIcon, styles.emptyIconMuted]}>
+              <Bookmark size={22} color={colors.ink2} />
+            </View>
+            <View style={styles.flex1}>
+              <Text style={type.bodyStrong}>Nothing saved yet</Text>
+              <Text style={type.small}>Tap the bookmark on any spot to keep it here for later.</Text>
+            </View>
+          </View>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hList}>
+            {saved.map((spot) => (
+              <Pressable
+                key={spot.id}
+                onPress={() => navigation.navigate('Spot', { spotId: spot.id })}
+                style={({ pressed }) => [card, styles.spotCard, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel={spot.name}
               >
                 {spot.cover_photo_url ? (
                   <Image source={{ uri: spot.cover_photo_url }} style={styles.spotImg} resizeMode="cover" />

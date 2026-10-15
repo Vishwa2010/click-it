@@ -12,7 +12,8 @@ import {
 } from 'react-native'
 import { StackScreenProps } from '@react-navigation/stack'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ChevronLeft, Swords, Footprints, Camera, Navigation, Aperture, ImageOff, Compass } from 'lucide-react-native'
+import { ChevronLeft, Swords, Footprints, Camera, Navigation, Aperture, ImageOff, Compass, Bookmark, MapPin } from 'lucide-react-native'
+import { useUserStore } from '../store/useUserStore'
 import { RootStackParamList } from '../navigation/types'
 import { SpotPhoto } from '../types/spot'
 import { useSpot } from '../hooks/useSpot'
@@ -45,7 +46,8 @@ export default function SpotScreen({ route, navigation }: Props) {
   const { spotId } = route.params
   const insets = useSafeAreaInsets()
   const { height } = useWindowDimensions()
-  const { spot, photos, activeDuel, founderName, usernames, loading, error, reload } = useSpot(spotId)
+  const { spot, photos, activeDuel, founderName, usernames, upvoted, saved, loading, error, reload, toggleUpvote, toggleSave } = useSpot(spotId)
+  const userId = useUserStore((s) => s.user?.id)
 
   const today = useMemo(() => new Date(), [])
   const shotWindow = useShotWindow(spot?.latitude ?? 0, spot?.longitude ?? 0, today)
@@ -146,6 +148,13 @@ export default function SpotScreen({ route, navigation }: Props) {
             </View>
           </View>
 
+          {spot.city || spot.country ? (
+            <View style={styles.meta}>
+              <MapPin size={16} color={colors.ink2} />
+              <Text style={styles.metaText}>{[spot.city, spot.country].filter(Boolean).join(', ')}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.metaRow}>
             <View style={styles.meta}>
               <Footprints size={16} color={colors.ink2} />
@@ -180,12 +189,25 @@ export default function SpotScreen({ route, navigation }: Props) {
             photos={photos}
             usernames={usernames}
             shotWindow={shotWindow}
-            onPressPhotographer={(userId) => navigation.navigate('Photographer', { userId })}
+            onPressPhotographer={(id) => navigation.navigate('Photographer', { userId: id })}
+            currentUserId={userId}
+            upvoted={upvoted}
+            onToggleUpvote={toggleUpvote}
           />
         </View>
       </ScrollView>
 
       {backButton}
+      <Pressable
+        style={({ pressed }) => [styles.backBtn, styles.saveBtn, { top: insets.top + 8 }, saved && styles.saveOn, pressed && styles.pressed]}
+        onPress={toggleSave}
+        hitSlop={hitSlop}
+        accessibilityRole="button"
+        accessibilityLabel={saved ? 'Remove from saved spots' : 'Save this spot'}
+        accessibilityState={{ selected: saved }}
+      >
+        <Bookmark size={20} color={saved ? colors.onInk : colors.ink} fill={saved ? colors.onInk : 'none'} />
+      </Pressable>
 
       <View style={[styles.actions, { paddingBottom: insets.bottom + 12 }]}>
         <Button
@@ -225,6 +247,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  saveBtn: { left: undefined, right: 16 },
+  saveOn: { backgroundColor: colors.ink, borderColor: colors.ink },
   heroPlaceholder: { width: '100%', backgroundColor: colors.sunk, justifyContent: 'center', alignItems: 'center', gap: 8 },
   body: { padding: 20, gap: 18 },
   duelBanner: {

@@ -103,6 +103,7 @@ export default function UploadScreen({ route, navigation }: Props) {
         camera: draft.camera.trim(),
         lens: draft.lens.trim(),
         existingSpotId: draft.existingSpot?.id ?? null,
+        spotCoords: draft.existingSpot ? { latitude: draft.existingSpot.latitude, longitude: draft.existingSpot.longitude } : null,
         newSpot: draft.existingSpot
           ? null
           : {

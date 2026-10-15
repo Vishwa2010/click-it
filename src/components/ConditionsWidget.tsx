@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native'
-import { Sun } from 'lucide-react-native'
+import { Sun, Cloud, CloudRain, CloudDrizzle, CloudSnow, CloudLightning, CloudFog, LucideIcon } from 'lucide-react-native'
 import { Coords, formatCountdown, nextGoldenHour, useNow } from '../lib/goldenHour'
+import { Sky, formatTemp, useWeather } from '../lib/weather'
 import { colors, fonts, radius } from '../theme'
 
 interface Props {
@@ -9,22 +10,48 @@ interface Props {
   style?: StyleProp<ViewStyle>
 }
 
-// Live golden-hour status for the area the map is centred on
+const SKY_ICON: Record<Sky, LucideIcon> = {
+  clear: Sun,
+  clouds: Cloud,
+  rain: CloudRain,
+  drizzle: CloudDrizzle,
+  snow: CloudSnow,
+  storm: CloudLightning,
+  fog: CloudFog,
+}
+
+const OVERCAST = 60 // % cloud cover above which golden light is unlikely
+
+// Live golden-hour status + current weather for the area the map is centred on
 export default function ConditionsWidget({ coords, isUserLocation, style }: Props) {
   const now = useNow()
+  const weather = useWeather(coords)
   const golden = nextGoldenHour(coords, now)
-  const where = isUserLocation ? 'near you' : 'in this area'
-  const title = golden.isNow ? 'Golden hour now' : 'Golden hour'
-  const sub = golden.isNow ? `${where} · go shoot` : `${where} · in ${formatCountdown(golden.start.getTime() - now.getTime())}`
+  const where = isUserLocation ? 'near you' : 'here'
+  const overcast = !!weather && (weather.cloudPercent >= OVERCAST || (weather.sky !== 'clear' && weather.sky !== 'clouds'))
+
+  const title = golden.isNow ? (overcast ? 'Golden hour · overcast' : 'Perfect light now') : 'Golden hour'
+  const timing = golden.isNow ? `${where}` : `${where} in ${formatCountdown(golden.start.getTime() - now.getTime())}`
+  const conditions = weather ? `${weather.description.charAt(0).toUpperCase()}${weather.description.slice(1)} · ${formatTemp(weather.tempC)}` : null
+  const Icon = weather ? SKY_ICON[weather.sky] : Sun
+  const live = golden.isNow && !overcast
 
   return (
-    <View style={[styles.widget, style]} pointerEvents="none" accessibilityRole="text" accessibilityLabel={`${title} ${sub}`}>
-      <View style={[styles.iconWrap, golden.isNow && styles.iconLive]}>
-        <Sun size={18} color={golden.isNow ? colors.onInk : colors.ink} strokeWidth={2.2} />
+    <View
+      style={[styles.widget, style]}
+      pointerEvents="none"
+      accessibilityRole="text"
+      accessibilityLabel={[title, timing, conditions].filter(Boolean).join(', ')}
+    >
+      <View style={[styles.iconWrap, live && styles.iconLive]}>
+        <Icon size={18} color={live ? colors.onInk : colors.ink} strokeWidth={2.2} />
       </View>
       <View>
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.sub}>{sub}</Text>
+        <Text style={styles.sub} numberOfLines={1}>
+          {timing}
+          {conditions ? ` · ${conditions}` : ''}
+        </Text>
       </View>
     </View>
   )

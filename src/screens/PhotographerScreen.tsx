@@ -5,6 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ChevronLeft, Trophy, Flag, Globe2, Building, Image as ImageIcon, ImageOff } from 'lucide-react-native'
 import { RootStackParamList } from '../navigation/types'
 import { supabase } from '../lib/supabase'
+import { isFollowing, setFollowing } from '../lib/spotsApi'
+import { useUserStore } from '../store/useUserStore'
+import { haptics } from '../lib/haptics'
 import { User } from '../types/user'
 import { Spot } from '../types/spot'
 import { colors, fonts, radius, type, card, explorerRankColors, hitSlop } from '../theme'
@@ -28,6 +31,9 @@ export default function PhotographerScreen({ route, navigation }: Props) {
   const [earned, setEarned] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const me = useUserStore((st) => st.user?.id)
+  const [following, setFollowingState] = useState(false)
+  const [followBusy, setFollowBusy] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -43,9 +49,26 @@ export default function PhotographerScreen({ route, navigation }: Props) {
       setPerson(u.data as User)
       setSpots((s.data ?? []) as Spot[])
       setEarned(new Set((b.data ?? []).map((r: { badge_id: string }) => r.badge_id)))
+      if (me && me !== userId) setFollowingState(await isFollowing(userId, me))
     }
     setLoading(false)
-  }, [userId])
+  }, [userId, me])
+
+  async function toggleFollow() {
+    if (!person) return
+    const on = !following
+    haptics.select()
+    setFollowBusy(true)
+    setFollowingState(on)
+    setPerson({ ...person, followers_count: Math.max(0, person.followers_count + (on ? 1 : -1)) })
+    const ok = await setFollowing(userId, on)
+    setFollowBusy(false)
+    if (!ok) {
+      haptics.warning()
+      setFollowingState(!on)
+      setPerson((cur) => (cur ? { ...cur, followers_count: Math.max(0, cur.followers_count + (on ? -1 : 1)) } : cur))
+    }
+  }
 
   useEffect(() => {
     load()
@@ -110,6 +133,18 @@ export default function PhotographerScreen({ route, navigation }: Props) {
               </Text>
             </View>
             {person.bio ? <Text style={[type.body, styles.bio]}>{person.bio}</Text> : null}
+            <Text style={type.small}>
+              <Text style={styles.strong}>{person.followers_count}</Text> followers · <Text style={styles.strong}>{person.following_count}</Text> following
+            </Text>
+            {me && me !== userId && (
+              <Button
+                label={following ? 'Following' : 'Follow'}
+                variant={following ? 'secondary' : 'primary'}
+                onPress={toggleFollow}
+                disabled={followBusy}
+                style={styles.follow}
+              />
+            )}
           </View>
 
           <View style={styles.stats}>
@@ -191,6 +226,8 @@ const styles = StyleSheet.create({
   rank: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1.5, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
   rankText: { fontSize: 12, fontFamily: fonts.bold },
   bio: { textAlign: 'center' },
+  strong: { color: colors.ink, fontFamily: fonts.bold },
+  follow: { alignSelf: 'stretch', marginTop: 6 },
   stats: { flexDirection: 'row', gap: 8, marginTop: 6 },
   stat: { flex: 1, alignItems: 'center', paddingVertical: 14, gap: 4, borderRadius: radius.md },
   statValue: { color: colors.ink, fontSize: 22, fontFamily: fonts.extrabold },

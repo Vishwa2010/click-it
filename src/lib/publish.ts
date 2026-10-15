@@ -1,6 +1,8 @@
 import { supabase, isSupabaseConfigured } from './supabase'
 import { uploadPhoto } from './cloudinary'
+import * as Location from 'expo-location'
 import { SpotDifficulty, SpotTag } from '../types/spot'
+import { getShotWindow } from './suncalc'
 
 export interface NewSpotInput {
   name: string
@@ -17,8 +19,37 @@ export interface PublishInput {
   camera: string
   lens: string
   existingSpotId: string | null
+  // Coordinates of the existing spot, for the golden-hour check
+  spotCoords?: { latitude: number; longitude: number } | null
   newSpot: NewSpotInput | null
 }
+
+// City/country for the spot's profile stats; best effort — empty if lookup fails
+async function placeFor(latitude: number, longitude: number): Promise<{ city: string; country: string }> {
+  try {
+    const [p] = await Location.reverseGeocodeAsync({ latitude, longitude })
+    return { city: p?.city ?? p?.subregion ?? '', country: p?.country ?? '' }
+  } catch {
+    return { city: '', country: '' }
+  }
+}
+
+// True when the photo's capture time falls in the spot's morning or evening golden hour (±15 min)
+function isGoldenHourShot(takenAt: string | null, latitude: number, longitude: number): boolean {
+  if (!takenAt) return false
+  const taken = new Date(takenAt)
+  if (Number.isNaN(taken.getTime())) return false
+  const w = getShotWindow(latitude, longitude, taken)
+  const slack = 15 * 60000
+  const t = taken.getTime()
+  return (
+    (t >= w.morningGoldenStart.getTime() - slack && t <= w.morningGoldenEnd.getTime() + slack) ||
+    (t >= w.eveningGoldenStart.getTime() - slack && t <= w.eveningGoldenEnd.getTime() + slack)
+  )
+}
+
+// Postgres "undefined column" — the newer migration hasn't been run yet; retry without the new fields
+const isMissingColumn = (code?: string) => code === '42703' || code === 'PGRST204'
 
 export interface PublishResult {
   spotId: string
@@ -39,30 +70,33 @@ export async function publishSpotPhoto(input: PublishInput): Promise<PublishResu
 
   let spotId = input.existingSpotId
   if (!spotId && input.newSpot) {
-    const { data, error } = await supabase
-      .from('spots')
-      .insert({
-        name: input.newSpot.name,
-        description: input.newSpot.description,
-        latitude: input.newSpot.latitude,
-        longitude: input.newSpot.longitude,
-        tags: input.newSpot.tags,
-        difficulty: input.newSpot.difficulty,
-      })
-      .select('id')
-      .single()
-    if (error || !data) throw new Error(error?.message ?? 'Could not create the spot.')
-    spotId = (data as { id: string }).id
+    const base = {
+      name: input.newSpot.name,
+      description: input.newSpot.description,
+      latitude: input.newSpot.latitude,
+      longitude: input.newSpot.longitude,
+      tags: input.newSpot.tags,
+      difficulty: input.newSpot.difficulty,
+    }
+    const place = await placeFor(input.newSpot.latitude, input.newSpot.longitude)
+    let res = await supabase.from('spots').insert({ ...base, ...place }).select('id').single()
+    if (res.error && isMissingColumn(res.error.code)) res = await supabase.from('spots').insert(base).select('id').single()
+    if (res.error || !res.data) throw new Error(res.error?.message ?? 'Could not create the spot.')
+    spotId = (res.data as { id: string }).id
   }
 
-  const { error: photoError } = await supabase.from('spot_photos').insert({
+  const coords = input.newSpot ?? input.spotCoords
+  const photo = {
     spot_id: spotId,
     photo_url: photoUrl,
     taken_at: input.takenAt,
     camera: input.camera,
     lens: input.lens,
-  })
-  if (photoError) throw new Error(photoError.message)
+  }
+  const golden = coords ? isGoldenHourShot(input.takenAt, coords.latitude, coords.longitude) : false
+  let photoRes = await supabase.from('spot_photos').insert({ ...photo, golden_hour: golden })
+  if (photoRes.error && isMissingColumn(photoRes.error.code)) photoRes = await supabase.from('spot_photos').insert(photo)
+  if (photoRes.error) throw new Error(photoRes.error.message)
 
   return { spotId: spotId as string, isNewSpot: !input.existingSpotId }
 }

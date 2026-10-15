@@ -14,6 +14,9 @@ interface Props {
   usernames: Record<string, string>
   shotWindow: ShotWindow
   onPressPhotographer?: (userId: string) => void
+  currentUserId?: string
+  upvoted?: Set<string>
+  onToggleUpvote?: (photoId: string) => void
 }
 
 // Minutes since midnight, read from the local time in the ISO string (where the photo was taken)
@@ -53,7 +56,7 @@ function filterPhotos(photos: SpotPhoto[], tab: GalleryTab, w: ShotWindow): Spot
   }
 }
 
-export default function PhotoGallery({ photos, usernames, shotWindow, onPressPhotographer }: Props) {
+export default function PhotoGallery({ photos, usernames, shotWindow, onPressPhotographer, currentUserId, upvoted, onToggleUpvote }: Props) {
   const [tab, setTab] = useState<GalleryTab>('Top')
   const visible = useMemo(() => filterPhotos(photos, tab, shotWindow), [photos, tab, shotWindow])
 
@@ -104,10 +107,22 @@ export default function PhotoGallery({ photos, usernames, shotWindow, onPressPho
                     <Text style={styles.username} numberOfLines={1}>{username}</Text>
                   </Pressable>
                   <View style={styles.tileMeta}>
-                    <View style={styles.upvoteRow}>
-                      <ArrowBigUp size={16} color={colors.ink} />
-                      <Text style={styles.upvotes}>{photo.upvotes}</Text>
-                    </View>
+                    <Pressable
+                      onPress={() => onToggleUpvote?.(photo.id)}
+                      disabled={photo.user_id === currentUserId || !onToggleUpvote}
+                      hitSlop={hitSlop}
+                      style={({ pressed }) => [styles.upvoteRow, upvoted?.has(photo.id) && styles.upvoteOn, pressed && styles.pressed]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${upvoted?.has(photo.id) ? 'Remove upvote' : 'Upvote'}, ${photo.upvotes} upvotes`}
+                      accessibilityState={{ selected: upvoted?.has(photo.id) ?? false, disabled: photo.user_id === currentUserId }}
+                    >
+                      <ArrowBigUp
+                        size={16}
+                        color={upvoted?.has(photo.id) ? colors.onInk : colors.ink}
+                        fill={upvoted?.has(photo.id) ? colors.onInk : 'none'}
+                      />
+                      <Text style={[styles.upvotes, upvoted?.has(photo.id) && styles.upvotesOn]}>{photo.upvotes}</Text>
+                    </Pressable>
                     <Text style={styles.gear} numberOfLines={1}>{photo.lens}</Text>
                   </View>
                 </View>
@@ -152,7 +167,9 @@ const styles = StyleSheet.create({
   avatarText: { color: colors.onInk, fontSize: 11, fontFamily: fonts.bold },
   username: { color: colors.ink, fontSize: 13, fontFamily: fonts.semibold, flex: 1 },
   tileMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 6 },
-  upvoteRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  upvoteRow: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: radius.pill, paddingHorizontal: 6, paddingVertical: 3, borderWidth: 1, borderColor: colors.line },
+  upvoteOn: { backgroundColor: colors.ink, borderColor: colors.ink },
+  upvotesOn: { color: colors.onInk },
   upvotes: { color: colors.ink, fontSize: 13, fontFamily: fonts.bold },
   gear: { ...type.caption, flexShrink: 1 },
   empty: { alignItems: 'center', paddingVertical: 28, gap: 8 },

@@ -18,6 +18,28 @@ export default function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [resetSent, setResetSent] = useState<string | null>(null)
+  const [resetting, setResetting] = useState(false)
+
+  async function handleForgot() {
+    const target = email.trim()
+    if (!target) {
+      setError('Type your email above, then tap “Forgot password?” again.')
+      return
+    }
+    setResetting(true)
+    setError(null)
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(target, {
+      redirectTo: 'https://vishwa2010.github.io/click-it/reset-password.html',
+    })
+    setResetting(false)
+    if (resetError) {
+      setError(resetError.message)
+      return
+    }
+    // Same message whether or not the account exists
+    setResetSent(target)
+  }
 
   async function handleLogin() {
     if (!email.trim() || !password) {
@@ -70,6 +92,9 @@ export default function LoginScreen({ navigation }: Props) {
 
         <View style={styles.form}>
           {error && <Banner tone="error" message={error} />}
+          {resetSent && (
+            <Banner tone="success" title="Check your email" message={`If ${resetSent} has an account, we sent a link to reset your password.`} />
+          )}
 
           <TextField
             label="Email"
@@ -93,6 +118,16 @@ export default function LoginScreen({ navigation }: Props) {
             returnKeyType="go"
             onSubmitEditing={handleLogin}
           />
+
+          <Pressable
+            onPress={handleForgot}
+            disabled={resetting}
+            hitSlop={hitSlop}
+            style={({ pressed }) => [styles.forgot, pressed && styles.pressed]}
+            accessibilityRole="button"
+          >
+            <Text style={styles.forgotText}>{resetting ? 'Sending…' : 'Forgot password?'}</Text>
+          </Pressable>
 
           <Button label="Log in" onPress={handleLogin} loading={loading} style={styles.submit} />
         </View>
@@ -119,6 +154,8 @@ const styles = StyleSheet.create({
   sub: { marginTop: 12 },
   form: { gap: 18 },
   submit: { marginTop: 6 },
+  forgot: { alignSelf: 'flex-end', paddingVertical: 4, marginTop: -6 },
+  forgotText: { color: colors.ink, fontSize: 14, fontFamily: fonts.semibold, textDecorationLine: 'underline' },
   switchRow: { alignItems: 'center', marginTop: 28, paddingVertical: 8 },
   switchLink: { color: colors.ink, fontFamily: fonts.bold, textDecorationLine: 'underline' },
   pressed: { opacity: 0.6 },

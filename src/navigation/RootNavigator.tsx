@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { View, ActivityIndicator, StyleSheet } from 'react-native'
-import { NavigationContainer } from '@react-navigation/native'
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native'
+import * as Notifications from 'expo-notifications'
 import { createStackNavigator } from '@react-navigation/stack'
 import { RootStackParamList } from './types'
 import TabNavigator from './TabNavigator'
@@ -12,11 +13,13 @@ import ShotDuelScreen from '../screens/ShotDuelScreen'
 import ARCompassScreen from '../screens/ARCompassScreen'
 import EditProfileScreen from '../screens/EditProfileScreen'
 import { supabase } from '../lib/supabase'
+import { rescheduleShotAlerts, spotIdFromResponse } from '../lib/shotAlerts'
 import { useUserStore } from '../store/useUserStore'
 import { User } from '../types/user'
 import { colors } from '../theme'
 
 const Stack = createStackNavigator<RootStackParamList & { Auth: undefined }>()
+const navRef = createNavigationContainerRef<RootStackParamList>()
 
 async function loadProfile(userId: string): Promise<User | null> {
   const { data, error } = await supabase
@@ -31,6 +34,30 @@ async function loadProfile(userId: string): Promise<User | null> {
 
 export default function RootNavigator() {
   const { authStatus, setSession, setUser, setAuthStatus, reset } = useUserStore()
+  const userId = useUserStore((s) => s.user?.id)
+
+  // Refresh golden-hour alerts each time a signed-in session starts
+  useEffect(() => {
+    if (authStatus === 'authenticated' && userId) rescheduleShotAlerts(userId)
+  }, [authStatus, userId])
+
+  // Tapping a golden-hour alert opens that spot
+  useEffect(() => {
+    if (authStatus !== 'authenticated') return
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const spotId = spotIdFromResponse(response)
+      if (spotId && navRef.isReady()) navRef.navigate('Spot', { spotId })
+    })
+    return () => sub.remove()
+  }, [authStatus])
+
+  async function openLaunchNotification() {
+    const spotId = spotIdFromResponse(await Notifications.getLastNotificationResponseAsync())
+    if (spotId && navRef.isReady()) {
+      await Notifications.clearLastNotificationResponseAsync()
+      navRef.navigate('Spot', { spotId })
+    }
+  }
 
   useEffect(() => {
     // Resolve initial session
@@ -103,7 +130,7 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer key="app">
+    <NavigationContainer key="app" ref={navRef} onReady={openLaunchNotification}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,

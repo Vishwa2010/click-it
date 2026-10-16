@@ -19,6 +19,7 @@ import { TabParamList, RootStackParamList } from '../navigation/types'
 import { useUserStore } from '../store/useUserStore'
 import { useProfileData } from '../hooks/useProfileData'
 import { supabase } from '../lib/supabase'
+import { shotAlertsEnabled, setShotAlerts } from '../lib/shotAlerts'
 import { RANK_THRESHOLDS, getProgressToNextRank, getXPToNextRank } from '../lib/xp'
 import { colors, fonts, radius, type, card, explorerRankColors, hitSlop } from '../theme'
 import { ExplorerRank } from '../types/user'
@@ -68,9 +69,37 @@ export default function ProfileScreen() {
     ])
   }
 
-  function openSettings() {
+  function toggleAlerts(on: boolean, userId: string) {
+    if (!on) {
+      setShotAlerts(false, userId)
+      return
+    }
+    // Explain before iOS shows its permission prompt
+    Alert.alert(
+      'Golden-hour alerts',
+      'Get a heads-up 45 minutes before golden hour at spots you’ve saved within 20 km of you.',
+      [
+        { text: 'Not now', style: 'cancel' },
+        {
+          text: 'Turn on',
+          onPress: async () => {
+            if (!(await setShotAlerts(true, userId))) {
+              Alert.alert('Notifications are off', 'Allow notifications for ClickIt in Settings to get golden-hour alerts.')
+            }
+          },
+        },
+      ]
+    )
+  }
+
+  async function openSettings() {
+    const alertsOn = await shotAlertsEnabled()
+    const userId = user?.id
     Alert.alert('Settings', undefined, [
       { text: 'Edit profile', onPress: () => navigation.navigate('EditProfile') },
+      ...(userId
+        ? [{ text: alertsOn ? 'Turn off golden-hour alerts' : 'Turn on golden-hour alerts', onPress: () => toggleAlerts(!alertsOn, userId) }]
+        : []),
       { text: 'Sign out', style: 'destructive', onPress: confirmSignOut },
       { text: 'Cancel', style: 'cancel' },
     ])

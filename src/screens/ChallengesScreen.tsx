@@ -1,8 +1,15 @@
 import { useCallback, useState } from 'react'
-import { View, Text, ScrollView, RefreshControl, ActivityIndicator, StyleSheet } from 'react-native'
+import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from '@react-navigation/native'
-import { Trophy, Timer, Crown, CalendarClock, Swords } from 'lucide-react-native'
+import { Trophy, Timer, Crown, CalendarClock, Swords, ChevronRight } from 'lucide-react-native'
+import { CompositeNavigationProp, useNavigation } from '@react-navigation/native'
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
+import { StackNavigationProp } from '@react-navigation/stack'
+import { TabParamList, RootStackParamList } from '../navigation/types'
+import { fetchMyDuels } from '../lib/duelsApi'
+import { fetchUsernames } from '../lib/spotsApi'
+import { Duel } from '../types/duel'
 import { supabase } from '../lib/supabase'
 import { useUserStore } from '../store/useUserStore'
 import { Challenge } from '../types/challenge'
@@ -32,8 +39,13 @@ function timeLeft(endIso: string): string {
   return days > 0 ? `${days}d ${hours}h left` : `${hours}h left`
 }
 
+type Nav = CompositeNavigationProp<BottomTabNavigationProp<TabParamList, 'Challenges'>, StackNavigationProp<RootStackParamList>>
+
 export default function ChallengesScreen() {
   const insets = useSafeAreaInsets()
+  const navigation = useNavigation<Nav>()
+  const [duels, setDuels] = useState<Duel[]>([])
+  const [duelNames, setDuelNames] = useState<Record<string, string>>({})
   const user = useUserStore((s) => s.user)
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [joined, setJoined] = useState<Record<string, Joined>>({})
@@ -57,6 +69,11 @@ export default function ChallengesScreen() {
       setChallenges((c.data ?? []) as Challenge[])
       setJoined(Object.fromEntries(((j.data ?? []) as ({ challenge_id: string } & Joined)[]).map((r) => [r.challenge_id, r])))
       setLeaders((l.data ?? []) as Leader[])
+    }
+    if (user) {
+      const mine = await fetchMyDuels(user.id)
+      setDuels(mine)
+      setDuelNames(await fetchUsernames(mine.flatMap((d) => [d.challenger_id, d.opponent_id])))
     }
     setLoading(false)
   }, [user])
@@ -159,6 +176,37 @@ export default function ChallengesScreen() {
             </>
           )}
 
+          {duels.length > 0 && (
+            <>
+              <View style={styles.sectionHead}>
+                <Swords size={18} color={colors.ink} />
+                <Text style={type.headline}>Your duels</Text>
+              </View>
+              {[...duels]
+                .sort((a, b) => Number(b.status === 'pending' && b.opponent_id === user?.id) - Number(a.status === 'pending' && a.opponent_id === user?.id))
+                .map((d) => {
+                  const invite = d.status === 'pending' && d.opponent_id === user?.id
+                  const rival = d.challenger_id === user?.id ? d.opponent_id : d.challenger_id
+                  return (
+                    <Pressable
+                      key={d.id}
+                      onPress={() => navigation.navigate('ShotDuel', { duelId: d.id })}
+                      style={({ pressed }) => [card, styles.duelRow, invite && styles.invite, pressed && styles.pressed]}
+                      accessibilityRole="button"
+                    >
+                      <View style={styles.flex1}>
+                        <Text style={type.subhead}>vs @{duelNames[rival] ?? 'photographer'}</Text>
+                        <Text style={type.caption}>
+                          {invite ? 'You’ve been challenged — tap to answer' : d.status === 'pending' ? 'Waiting for them to accept' : `Voting · ${d.challenger_votes + d.opponent_votes} votes`}
+                        </Text>
+                      </View>
+                      <ChevronRight size={20} color={colors.ink2} />
+                    </Pressable>
+                  )
+                })}
+            </>
+          )}
+
           <View style={styles.sectionHead}>
             <Trophy size={18} color={colors.ink} />
             <Text style={type.headline}>Leaderboard</Text>
@@ -207,6 +255,9 @@ const styles = StyleSheet.create({
   track: { flex: 1, height: 8, borderRadius: 4, backgroundColor: colors.sunk, overflow: 'hidden' },
   fill: { height: '100%', backgroundColor: colors.ink, borderRadius: 4 },
   board: { borderRadius: radius.lg, overflow: 'hidden' },
+  duelRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radius.lg },
+  invite: { borderColor: colors.ink, borderWidth: 1.5 },
+  pressed: { opacity: 0.8 },
   boardEmpty: { padding: 16 },
   leader: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, minHeight: 52 },
   leaderBorder: { borderTopWidth: 1, borderTopColor: colors.line },

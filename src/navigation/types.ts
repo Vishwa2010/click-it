@@ -19,7 +19,7 @@ export type RootStackParamList = {
   Spot: { spotId: string }
   Photographer: { userId: string }
   RouteBuilder: undefined
-  ShotDuel: { duelId?: string }
+  ShotDuel: { duelId?: string; spotId?: string }
   ARCompass: undefined
   EditProfile: undefined
 }

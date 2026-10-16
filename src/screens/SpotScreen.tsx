@@ -184,6 +184,18 @@ export default function SpotScreen({ route, navigation }: Props) {
 
           <ShotWindowCard window={shotWindow} communityStart={spot.best_time_start} communityEnd={spot.best_time_end} now={today} />
 
+          {userId && photos.some((p) => p.user_id === userId) && !activeDuel && (
+            <Pressable
+              onPress={() => navigation.navigate('ShotDuel', { spotId: spot.id })}
+              style={({ pressed }) => [styles.duelInvite, pressed && styles.pressed]}
+              accessibilityRole="button"
+            >
+              <Swords size={18} color={colors.ink} />
+              <Text style={[type.smallStrong, styles.flex1]}>Challenge someone to a Shot Duel here</Text>
+              <Text style={type.small}>→</Text>
+            </Pressable>
+          )}
+
           <Text style={[type.headline, styles.section]}>Photos</Text>
           <PhotoGallery
             photos={photos}
@@ -285,6 +297,8 @@ const styles = StyleSheet.create({
   gearText: { flexShrink: 1 },
   gearStrong: { color: colors.ink, fontFamily: fonts.bold },
   section: { marginBottom: -6 },
+  flex1: { flex: 1 },
+  duelInvite: { ...card, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radius.md },
   actions: {
     position: 'absolute',
     left: 0,

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CompositeNavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native'
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import { StackNavigationProp } from '@react-navigation/stack'
-import { Sun, TrendingUp, Sparkles, ImageOff, Navigation, MapPinPlus } from 'lucide-react-native'
+import { Sun, TrendingUp, Sparkles, ImageOff, Navigation, MapPinPlus, Footprints, Compass } from 'lucide-react-native'
 import { TabParamList, RootStackParamList } from '../navigation/types'
 import { useSpotsStore } from '../store/useSpotsStore'
 import { nextGoldenHour, formatCountdown, useNow } from '../lib/goldenHour'
@@ -78,6 +78,28 @@ export default function ExploreScreen() {
       <View style={styles.pad}>
         <Text style={type.eyebrow}>Discover</Text>
         <Text style={[type.display, styles.title]}>Explore.</Text>
+        <View style={styles.tools}>
+          <Pressable
+            onPress={() => navigation.navigate('RouteBuilder')}
+            style={({ pressed }) => [card, styles.tool, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityHint="Plans a walk through nearby spots, timed for golden hour"
+          >
+            <Footprints size={20} color={colors.ink} />
+            <Text style={type.bodyStrong}>Photo walk</Text>
+            <Text style={type.caption}>Nearby spots, timed for golden hour</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('ARCompass')}
+            style={({ pressed }) => [card, styles.tool, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityHint="Points you toward spots around you"
+          >
+            <Compass size={20} color={colors.ink} />
+            <Text style={type.bodyStrong}>AR Compass</Text>
+            <Text style={type.caption}>See which way the spots are</Text>
+          </Pressable>
+        </View>
       </View>
 
       {status === 'error' && (
@@ -185,6 +207,8 @@ const styles = StyleSheet.create({
   title: { marginTop: 6, marginBottom: 8 },
   loading: { marginTop: 60 },
   pressed: { opacity: 0.8 },
+  tools: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  tool: { flex: 1, padding: 14, gap: 4, borderRadius: radius.lg },
   section: { marginTop: 24, gap: 12 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20 },
   hList: { paddingHorizontal: 20, gap: 10 },

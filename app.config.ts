@@ -40,10 +40,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-image-picker',
       {
         photosPermission: 'ClickIt needs your photos so you can pin where a shot was taken.',
-        cameraPermission: 'ClickIt uses the camera so you can capture a shot and pin its spot.',
+        cameraPermission: 'ClickIt uses the camera to capture shots for new spots and for the AR Compass.',
         microphonePermission: false,
       },
     ],
+    ['expo-camera', { cameraPermission: 'ClickIt uses the camera for the AR Compass, to show spots in the direction you point.', recordAudioAndroid: false }],
+    ['expo-notifications', { color: '#1A1714' }],
     './plugins/withIos27Fixes',
   ],
 })

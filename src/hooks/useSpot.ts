@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Spot, SpotPhoto } from '../types/spot'
 import { Duel } from '../types/duel'
+import { rescheduleShotAlerts } from '../lib/shotAlerts'
 import { fetchSpot, fetchSpotPhotos, fetchUsernames, fetchActiveDuel, fetchMyUpvotes, setUpvote, isSpotSaved, setSpotSaved } from '../lib/spotsApi'
 import { useUserStore } from '../store/useUserStore'
 import { haptics } from '../lib/haptics'
@@ -112,8 +113,10 @@ export function useSpot(spotId: string): SpotState & SpotActions {
     if (!(await setSpotSaved(spotId, on))) {
       haptics.warning()
       setState((s) => ({ ...s, saved: !on }))
+    } else if (userId) {
+      rescheduleShotAlerts(userId)
     }
-  }, [spotId])
+  }, [spotId, userId])
 
   return { ...state, reload: load, toggleUpvote, toggleSave }
 }

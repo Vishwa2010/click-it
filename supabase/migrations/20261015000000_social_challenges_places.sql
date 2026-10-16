@@ -2,6 +2,18 @@
 -- Run once in Supabase: Dashboard → SQL Editor → New query → paste → Run. Safe to re-run.
 -- Requires the earlier migrations (init, badges, xp_and_badges).
 
+-- Rank from XP (also defined in xp_and_badges; repeated so this script never depends on run order)
+create or replace function public.rank_for_xp(p_xp integer) returns text
+language sql immutable as $$
+  select case
+    when p_xp >= 40000 then 'legend'
+    when p_xp >= 15000 then 'elite'
+    when p_xp >= 5000 then 'gold'
+    when p_xp >= 1000 then 'silver'
+    else 'bronze'
+  end
+$$;
+
 -- XP never goes below zero (upvotes can be withdrawn)
 create or replace function public.award_xp(p_user uuid, p_amount integer) returns void
 language sql security definer set search_path = public as $$

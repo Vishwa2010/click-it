@@ -65,6 +65,7 @@ export async function fetchActiveDuel(spotId: string): Promise<Duel | null> {
     .select('*')
     .eq('spot_id', spotId)
     .in('status', ['active', 'voting'])
+    .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()

@@ -49,7 +49,14 @@ export async function setShotAlerts(on: boolean, userId: string): Promise<boolea
   return on
 }
 
-export async function rescheduleShotAlerts(userId: string): Promise<void> {
+// Calls are chained so two quick saves can't interleave and schedule duplicate alerts
+let queue: Promise<void> = Promise.resolve()
+export function rescheduleShotAlerts(userId: string): Promise<void> {
+  queue = queue.then(() => reschedule(userId))
+  return queue
+}
+
+async function reschedule(userId: string): Promise<void> {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync()
     if (!(await shotAlertsEnabled())) return
@@ -75,7 +82,8 @@ export async function rescheduleShotAlerts(userId: string): Promise<void> {
         const w = getShotWindow(spot.latitude, spot.longitude, new Date(now + d * 86400000))
         for (const start of [w.morningGoldenStart, w.eveningGoldenStart]) {
           const fireAt = new Date(start.getTime() - LEAD_MS)
-          if (fireAt.getTime() > now + 60000) alerts.push({ spot, start, fireAt })
+          // No golden hour in polar summer/winter: SunCalc returns an invalid date
+          if (!Number.isNaN(fireAt.getTime()) && fireAt.getTime() > now + 60000) alerts.push({ spot, start, fireAt })
         }
       }
     }

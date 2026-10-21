@@ -135,7 +135,7 @@ export default function ARCompassScreen({ navigation }: Props) {
             <View style={styles.me} />
             {nearby.map((n) => {
               const angle = ((relative(n.bearing, facing) - 90) * Math.PI) / 180
-              const r = (Math.min(1, n.meters / RANGE_M) * radarSize) / 2 - 8
+              const r = Math.max(14, (Math.min(1, n.meters / RANGE_M) * radarSize) / 2 - 8) // keep clear of your own dot
               return (
                 <Pressable
                   key={n.spot.id}

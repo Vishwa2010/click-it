@@ -57,12 +57,30 @@ export async function settleDuel(duelId: string): Promise<void> {
   await supabase.rpc('settle_duel', { p_duel: duelId })
 }
 
-export async function fetchMyDuels(userId: string): Promise<Duel[]> {
-  const { data } = await supabase
+const isOver = (d: Duel) => new Date(d.expires_at).getTime() <= Date.now()
+
+async function openDuels(userId: string, spotId?: string): Promise<Duel[]> {
+  let q = supabase
     .from('duels')
     .select('*')
     .or(`challenger_id.eq.${userId},opponent_id.eq.${userId}`)
     .in('status', ['pending', 'voting'])
-    .order('created_at', { ascending: false })
+  if (spotId) q = q.eq('spot_id', spotId)
+  const { data } = await q.order('created_at', { ascending: false })
   return (data ?? []) as Duel[]
+}
+
+// Your open duels; any past their deadline are settled first so they don't linger as "live"
+export async function fetchMyDuels(userId: string): Promise<Duel[]> {
+  const duels = await openDuels(userId)
+  const stale = duels.filter(isOver)
+  if (stale.length === 0) return duels
+  await Promise.all(stale.map((d) => settleDuel(d.id)))
+  return openDuels(userId)
+}
+
+// People you already have an open duel with at this spot (so you can't challenge them twice)
+export async function fetchBusyRivals(userId: string, spotId: string): Promise<Set<string>> {
+  const duels = (await openDuels(userId, spotId)).filter((d) => !isOver(d))
+  return new Set(duels.map((d) => (d.challenger_id === userId ? d.opponent_id : d.challenger_id)))
 }

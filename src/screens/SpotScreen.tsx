@@ -120,7 +120,8 @@ export default function SpotScreen({ route, navigation }: Props) {
                 <Text style={styles.duelTitle}>Shot Duel live here</Text>
                 <Text style={styles.duelMeta}>
                   {usernames[activeDuel.challenger_id] ?? 'Challenger'} {activeDuel.challenger_votes} –{' '}
-                  {activeDuel.opponent_votes} {usernames[activeDuel.opponent_id] ?? 'Opponent'} · Tap to vote
+                  {activeDuel.opponent_votes} {usernames[activeDuel.opponent_id] ?? 'Opponent'} ·{' '}
+                  {userId === activeDuel.challenger_id || userId === activeDuel.opponent_id ? 'Tap to see the votes' : 'Tap to vote'}
                 </Text>
               </View>
             </Pressable>

@@ -6,7 +6,7 @@ import { ChevronLeft, Swords, Crown, Timer, Check } from 'lucide-react-native'
 import { RootStackParamList } from '../navigation/types'
 import { useUserStore } from '../store/useUserStore'
 import { fetchSpotPhotos, fetchUsernames, fetchSpot } from '../lib/spotsApi'
-import { fetchDuel, createDuel, answerDuel, voteDuel, settleDuel, DuelDetail, DUEL_HOURS } from '../lib/duelsApi'
+import { fetchDuel, createDuel, answerDuel, voteDuel, settleDuel, fetchBusyRivals, DuelDetail, DUEL_HOURS } from '../lib/duelsApi'
 import { SpotPhoto } from '../types/spot'
 import { colors, fonts, radius, type, card, hitSlop } from '../theme'
 import { haptics } from '../lib/haptics'
@@ -60,6 +60,7 @@ export default function ShotDuelScreen({ route, navigation }: Props) {
   const [spotPhotos, setSpotPhotos] = useState<SpotPhoto[]>([])
   const [names, setNames] = useState<Record<string, string>>({})
   const [opponent, setOpponent] = useState<string | null>(null)
+  const [busyRivals, setBusyRivals] = useState<Set<string>>(new Set())
   const [myPhoto, setMyPhoto] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -74,8 +75,8 @@ export default function ShotDuelScreen({ route, navigation }: Props) {
       let d: DuelDetail | null = null
       if (duelId) {
         d = await fetchDuel(duelId, userId)
-        // Past the deadline? settle it, then show the result
-        if (d && d.duel.status === 'voting' && new Date(d.duel.expires_at).getTime() <= Date.now()) {
+        // Past the deadline (voting over, or an invite nobody answered)? settle it, then show the result
+        if (d && (d.duel.status === 'voting' || d.duel.status === 'pending') && new Date(d.duel.expires_at).getTime() <= Date.now()) {
           await settleDuel(duelId)
           d = await fetchDuel(duelId, userId)
         }
@@ -88,6 +89,7 @@ export default function ShotDuelScreen({ route, navigation }: Props) {
         setSpotPhotos(photos)
         setSpotName(d?.spotName ?? spot?.name ?? 'this spot')
         setNames(await fetchUsernames(photos.map((p) => p.user_id)))
+        if (!d && userId) setBusyRivals(await fetchBusyRivals(userId, sid))
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Couldn’t load this duel.')
@@ -102,8 +104,8 @@ export default function ShotDuelScreen({ route, navigation }: Props) {
 
   const myPhotos = useMemo(() => spotPhotos.filter((p) => p.user_id === userId), [spotPhotos, userId])
   const rivals = useMemo(
-    () => [...new Set(spotPhotos.filter((p) => p.user_id !== userId).map((p) => p.user_id))],
-    [spotPhotos, userId]
+    () => [...new Set(spotPhotos.filter((p) => p.user_id !== userId && !busyRivals.has(p.user_id)).map((p) => p.user_id))],
+    [spotPhotos, userId, busyRivals]
   )
 
   async function run(action: () => Promise<void>, success?: () => void) {
@@ -157,7 +159,9 @@ export default function ShotDuelScreen({ route, navigation }: Props) {
           {myPhotos.length === 0 ? (
             <Banner tone="info" title="Post a photo here first" message="You need your own shot of this spot to start a duel." />
           ) : rivals.length === 0 ? (
-            <Banner tone="info" title="No rivals yet" message="Nobody else has posted a photo here yet. Check back once others have shot this spot." />
+            <Banner tone="info" title="No rivals yet" message={busyRivals.size > 0
+                ? 'You already have a duel going with everyone who has shot this spot.'
+                : 'Nobody else has posted a photo here yet. Check back once others have shot this spot.'} />
           ) : (
             <>
               <Text style={type.eyebrow}>1 · Opponent</Text>
@@ -207,6 +211,7 @@ export default function ShotDuelScreen({ route, navigation }: Props) {
     duel.status === 'completed' && total > 0 && duel.challenger_votes !== duel.opponent_votes
       ? duel.challenger_votes > duel.opponent_votes ? 'challenger' : 'opponent'
       : null
+  const inviteOpen = duel.status === 'pending' && new Date(duel.expires_at).getTime() > Date.now()
   const canVote = duel.status === 'voting' && !isChallenger && !isOpponent && !myVote && new Date(duel.expires_at).getTime() > Date.now()
 
   const side = (s: 'challenger' | 'opponent') => {
@@ -255,10 +260,12 @@ export default function ShotDuelScreen({ route, navigation }: Props) {
           <Timer size={14} color={colors.ink2} />
           <Text style={type.small}>
             {duel.status === 'pending'
-              ? isOpponent ? 'You’ve been challenged — answer below' : 'Waiting for the opponent to accept'
+              ? isOpponent ? `You’ve been challenged — ${timeLeft(duel.expires_at).replace('left', 'to answer')}` : 'Waiting for the opponent to accept'
               : duel.status === 'voting'
                 ? timeLeft(duel.expires_at)
-                : winner ? `Winner: @${usernames[winner === 'challenger' ? duel.challenger_id : duel.opponent_id]} (+150 XP)` : 'Duel over — no winner'}
+                : winner
+                  ? `Winner: @${usernames[winner === 'challenger' ? duel.challenger_id : duel.opponent_id] ?? 'photographer'} (+150 XP)`
+                  : duel.opponent_photo_url ? 'Duel over — it’s a tie' : 'Duel closed — the invite wasn’t accepted'}
           </Text>
         </View>
         {error && <Banner tone="error" message={error} />}
@@ -268,7 +275,7 @@ export default function ShotDuelScreen({ route, navigation }: Props) {
           {side('opponent')}
         </View>
 
-        {duel.status === 'pending' && isOpponent && (
+        {inviteOpen && isOpponent && (
           <>
             <Text style={type.eyebrow}>Accept with one of your photos</Text>
             {myPhotos.length === 0 ? (
@@ -280,7 +287,7 @@ export default function ShotDuelScreen({ route, navigation }: Props) {
         )}
       </ScrollView>
 
-      {duel.status === 'pending' && isOpponent && (
+      {inviteOpen && isOpponent && (
         <View style={[styles.footer, styles.footerRow, { paddingBottom: insets.bottom + 12 }]}>
           <Button
             label="Decline"

@@ -20,6 +20,15 @@ import { colors } from '../theme'
 
 const Stack = createStackNavigator<RootStackParamList & { Auth: undefined }>()
 const navRef = createNavigationContainerRef<RootStackParamList>()
+// The tap that launched the app can arrive both as the "last response" and through the listener
+const handledAlerts = new Set<string>()
+function openAlert(response: Notifications.NotificationResponse | null) {
+  const spotId = spotIdFromResponse(response)
+  const key = response?.notification.request.identifier
+  if (!spotId || !key || handledAlerts.has(key) || !navRef.isReady()) return
+  handledAlerts.add(key)
+  navRef.navigate('Spot', { spotId })
+}
 
 async function loadProfile(userId: string): Promise<User | null> {
   const { data, error } = await supabase
@@ -44,19 +53,12 @@ export default function RootNavigator() {
   // Tapping a golden-hour alert opens that spot
   useEffect(() => {
     if (authStatus !== 'authenticated') return
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const spotId = spotIdFromResponse(response)
-      if (spotId && navRef.isReady()) navRef.navigate('Spot', { spotId })
-    })
+    const sub = Notifications.addNotificationResponseReceivedListener(openAlert)
     return () => sub.remove()
   }, [authStatus])
 
   async function openLaunchNotification() {
-    const spotId = spotIdFromResponse(await Notifications.getLastNotificationResponseAsync())
-    if (spotId && navRef.isReady()) {
-      await Notifications.clearLastNotificationResponseAsync()
-      navRef.navigate('Spot', { spotId })
-    }
+    openAlert(await Notifications.getLastNotificationResponseAsync())
   }
 
   useEffect(() => {

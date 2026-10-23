@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClickIt — Email confirmed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #1A1714;
+      --cream: #F5F0E8;
+      --d40: rgba(26,23,20,0.40);
+      --d12: rgba(26,23,20,0.12);
+      --d06: rgba(26,23,20,0.06);
+      --green: #2ECC71;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background: var(--cream);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .wrap { width: 100%; max-width: 420px; }
+    .wordmark {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      color: var(--d40);
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 36px 32px 32px;
+      box-shadow: 0 2px 0 var(--d12), 0 16px 48px rgba(26,23,20,0.08);
+      text-align: center;
+    }
+    .icon-wrap {
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      background: var(--d06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 22px;
+    }
+    .icon-wrap.ok { background: rgba(46,204,113,0.14); }
+    h1 {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: var(--d40);
+      line-height: 1.65;
+      margin-bottom: 28px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      border-radius: 13px;
+      background: var(--ink);
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--cream);
+      text-decoration: none;
+      transition: transform 0.12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { transform: scale(0.98); }
+    .hint { font-size: 12px; color: var(--d40); margin-top: 14px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="wordmark">ClickIt</div>
+    <div class="card" id="card"></div>
+  </div>
+
+  <script>
+    // Supabase has already confirmed the email before redirecting here.
+    // It appends either session tokens (success) or an error to the URL.
+    const raw = (location.hash || '').replace(/^#/, '') + '&' + (location.search || '').replace(/^\?/, '');
+    const params = new URLSearchParams(raw);
+    const error = params.get('error') || params.get('error_code');
+
+    // Don't leave login tokens sitting in the address bar or browser history
+    if (location.hash || location.search) history.replaceState(null, '', location.pathname);
+
+    const card = document.getElementById('card');
+    if (error) {
+      const expired = (params.get('error_code') || '').includes('expired') ||
+        (params.get('error_description') || '').toLowerCase().includes('expired');
+      card.innerHTML = `
+        <div class="icon-wrap">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1A1714" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+        </div>
+        <h1>${expired ? 'Link expired' : 'Link not valid'}</h1>
+        <p class="subtitle">${expired
+          ? 'This confirmation link has expired or was already used. If you can’t log in, sign up again in ClickIt to get a new link.'
+          : 'We couldn’t confirm your email with this link. Try signing up again in ClickIt to get a new one.'}</p>
+        <a class="btn" href="clickit://">Open ClickIt</a>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="icon-wrap ok">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <h1>Email confirmed</h1>
+        <p class="subtitle">Your ClickIt account is ready. Open the app and log in to start finding the shot.</p>
+        <a class="btn" href="clickit://">Open ClickIt</a>
+        <p class="hint">On a computer? Just open ClickIt on your phone and log in.</p>
+      `;
+    }
+  </script>
+</body>
+</html>

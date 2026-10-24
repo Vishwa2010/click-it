@@ -8,6 +8,8 @@ import {
   RefreshControl,
   StyleSheet,
   Alert,
+  Modal,
+  ActivityIndicator,
   useWindowDimensions,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -21,6 +23,7 @@ import { useProfileData } from '../hooks/useProfileData'
 import { supabase } from '../lib/supabase'
 import { shotAlertsEnabled, setShotAlerts } from '../lib/shotAlerts'
 import { openLegal, PRIVACY_URL, TERMS_URL } from '../lib/legal'
+import { deleteMyAccount } from '../lib/account'
 import { RANK_THRESHOLDS, getProgressToNextRank, getXPToNextRank } from '../lib/xp'
 import { colors, fonts, radius, type, card, explorerRankColors, hitSlop } from '../theme'
 import { ExplorerRank } from '../types/user'
@@ -70,6 +73,42 @@ export default function ProfileScreen() {
     ])
   }
 
+  // Two explicit confirmations before anything is deleted; the second spells out what goes
+  function confirmDeleteAccount(userId: string) {
+    Alert.alert(
+      'Delete your account?',
+      'This permanently deletes your profile, your photos, your XP and badges, and everything else tied to your account. It can’t be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          style: 'destructive',
+          onPress: () =>
+            Alert.alert(
+              'Delete permanently?',
+              'Spots you founded stay on the map without your name if other people have photographed them; otherwise they’re removed.',
+              [
+                { text: 'Keep my account', style: 'cancel' },
+                {
+                  text: 'Delete account',
+                  style: 'destructive',
+                  onPress: async () => {
+                    setSigningOut(true)
+                    try {
+                      await deleteMyAccount(userId)
+                    } catch (e) {
+                      setSigningOut(false)
+                      Alert.alert('Account not deleted', e instanceof Error ? e.message : 'Please try again.')
+                    }
+                  },
+                },
+              ]
+            ),
+        },
+      ]
+    )
+  }
+
   function toggleAlerts(on: boolean, userId: string) {
     if (!on) {
       setShotAlerts(false, userId)
@@ -103,7 +142,8 @@ export default function ProfileScreen() {
         : []),
       { text: 'Privacy policy', onPress: () => openLegal(PRIVACY_URL) },
       { text: 'Terms of service', onPress: () => openLegal(TERMS_URL) },
-      { text: 'Sign out', style: 'destructive', onPress: confirmSignOut },
+      { text: 'Sign out', onPress: confirmSignOut },
+      ...(userId ? [{ text: 'Delete account', style: 'destructive' as const, onPress: () => confirmDeleteAccount(userId) }] : []),
       { text: 'Cancel', style: 'cancel' },
     ])
   }
@@ -134,6 +174,7 @@ export default function ProfileScreen() {
   ]
 
   return (
+    <>
     <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 48 }}
@@ -332,10 +373,22 @@ export default function ProfileScreen() {
         )}
       </View>
     </ScrollView>
+    {/* Blocks the screen while signing out or deleting the account */}
+    <Modal visible={signingOut} transparent animationType="fade">
+      <View style={styles.busyScrim} accessibilityLiveRegion="polite">
+        <View style={styles.busyCard}>
+          <ActivityIndicator color={colors.ink} />
+          <Text style={type.bodyStrong}>One moment…</Text>
+        </View>
+      </View>
+    </Modal>
+    </>
   )
 }
 
 const styles = StyleSheet.create({
+  busyScrim: { flex: 1, backgroundColor: colors.scrim, justifyContent: 'center', alignItems: 'center' },
+  busyCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderRadius: radius.lg, paddingHorizontal: 20, paddingVertical: 16 },
   container: { flex: 1, backgroundColor: colors.paper },
   center: { justifyContent: 'center', alignItems: 'center', gap: 16, paddingHorizontal: 24 },
   pressed: { opacity: 0.75 },

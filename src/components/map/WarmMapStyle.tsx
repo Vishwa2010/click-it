@@ -1,30 +1,43 @@
 import MapboxGL from '@rnmapbox/maps'
 import { colors } from '../../theme'
 
-// Re-colours Mapbox's light-v11 base layers into the ClickIt "paper & ink" palette at runtime,
-// so the map matches the app without a custom Mapbox Studio style.
+// Re-colours Mapbox's light-v11 base layers at runtime — green land, blue oceans and seas —
+// and wraps the globe in a starry night sky, without a custom Mapbox Studio style.
 // Layer ids come from the light-v11 style; `existing` restyles a layer instead of adding one.
 const MAP = {
-  land: '#EEE7DB',
-  park: '#E0DCC6',
-  water: '#CBD3D1',
-  building: '#E4DACB',
-  road: '#FBF8F2',
-  path: '#D8CDBC',
+  land: '#DDE8CF',
+  park: '#BCD7A6',
+  water: '#86BEE3',
+  waterLabel: '#1E4A6E',
+  building: '#CFDABF',
+  road: '#FFFFFF',
+  path: '#C4D0B4',
   label: colors.ink2,
-  labelMinor: colors.muted,
-  halo: '#EEE7DB',
-  boundary: '#C9BEAE',
+  labelMinor: '#4F5A47',
+  halo: '#DDE8CF',
+  boundary: '#93A88A',
+}
+
+// Seen when zoomed out on the globe: near-black space with stars, a thin blue haze at the horizon
+const SKY = {
+  spaceColor: '#05070F',
+  starIntensity: 0.7,
+  color: '#CFE4F5',
+  highColor: '#24476E',
+  horizonBlend: 0.04,
+  range: [1, 10],
 }
 
 const ROADS = ['road-simple', 'bridge-simple', 'tunnel-simple']
 const PATHS = ['road-path', 'road-path-trail', 'road-pedestrian', 'road-steps', 'bridge-path', 'tunnel-path']
 const MAJOR_LABELS = ['settlement-major-label', 'settlement-minor-label', 'state-label', 'country-label']
-const MINOR_LABELS = ['road-label-simple', 'poi-label', 'settlement-subdivision-label', 'water-point-label', 'water-line-label', 'natural-point-label']
+const MINOR_LABELS = ['road-label-simple', 'poi-label', 'settlement-subdivision-label', 'natural-point-label']
+const WATER_LABELS = ['water-point-label', 'water-line-label']
 
 export default function WarmMapStyle() {
   return (
     <>
+      <MapboxGL.Atmosphere style={SKY} />
       <MapboxGL.BackgroundLayer id="land" existing style={{ backgroundColor: MAP.land }} />
       <MapboxGL.FillLayer id="national-park" existing style={{ fillColor: MAP.park }} />
       <MapboxGL.FillLayer id="landuse" existing style={{ fillColor: MAP.park }} />
@@ -44,6 +57,9 @@ export default function WarmMapStyle() {
       ))}
       {MINOR_LABELS.map((id) => (
         <MapboxGL.SymbolLayer key={id} id={id} existing style={{ textColor: MAP.labelMinor, textHaloColor: MAP.halo }} />
+      ))}
+      {WATER_LABELS.map((id) => (
+        <MapboxGL.SymbolLayer key={id} id={id} existing style={{ textColor: MAP.waterLabel, textHaloColor: MAP.water }} />
       ))}
     </>
   )

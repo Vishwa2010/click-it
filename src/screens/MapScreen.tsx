@@ -179,6 +179,7 @@ export default function MapScreen() {
       <MapboxGL.MapView
         style={StyleSheet.absoluteFill}
         styleURL="mapbox://styles/mapbox/light-v11"
+        projection="globe"
         compassEnabled={false}
         scaleBarEnabled={false}
         logoPosition={{ bottom: attributionBottom, left: 16 }}
@@ -329,6 +330,8 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: colors.ink,
+    borderWidth: 2,
+    borderColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: colors.ink,

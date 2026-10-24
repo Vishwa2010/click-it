@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from '@react-navigation/native'
-import { Trophy, Timer, Crown, CalendarClock, Swords, ChevronRight } from 'lucide-react-native'
+import { Trophy, Timer, Crown, CalendarClock, Swords, ChevronRight, Check } from 'lucide-react-native'
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native'
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import { StackNavigationProp } from '@react-navigation/stack'
@@ -31,6 +31,15 @@ interface Leader {
   explorer_rank: ExplorerRank
 }
 
+// What counts toward each challenge, and where in the app to do it
+const HOW_TO: Record<string, { unit: string; tip: string; cta: string; tab: 'Map' | 'Upload' }> = {
+  found_spots: { unit: 'new spots founded', tip: 'Pin a spot nobody has pinned yet.', cta: 'Pin a spot', tab: 'Upload' },
+  upload_photos: { unit: 'photos uploaded', tip: 'Upload photos to any spot.', cta: 'Upload a photo', tab: 'Upload' },
+  visit_spots: { unit: 'spots visited', tip: 'Open a spot and tap Navigate to log a visit.', cta: 'Find a spot', tab: 'Map' },
+  golden_hour_photos: { unit: 'golden-hour photos', tip: 'Upload photos taken during golden hour.', cta: 'Upload a photo', tab: 'Upload' },
+}
+const FALLBACK_HOW = { unit: 'done', tip: 'Keep exploring to make progress.', cta: 'Open the map', tab: 'Map' as const }
+
 function timeLeft(endIso: string): string {
   const ms = new Date(endIso).getTime() - Date.now()
   if (ms <= 0) return 'Ended'
@@ -53,6 +62,8 @@ export default function ChallengesScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [joining, setJoining] = useState<string | null>(null)
+  const [justJoined, setJustJoined] = useState<string | null>(null)
+  const [joinError, setJoinError] = useState<{ id: string; message: string } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -86,15 +97,18 @@ export default function ChallengesScreen() {
 
   async function join(id: string) {
     setJoining(id)
-    const { error: joinError } = await supabase.from('user_challenges').insert({ challenge_id: id })
+    setJoinError(null)
+    const { error: insertError } = await supabase.from('user_challenges').insert({ challenge_id: id })
     setJoining(null)
-    if (joinError) {
+    // 23505 = already joined (e.g. from another device) — treat as success
+    if (insertError && insertError.code !== '23505') {
       haptics.warning()
-      setError('Couldn’t join that challenge. Please try again.')
+      setJoinError({ id, message: 'Couldn’t join that challenge. Check your connection and try again.' })
       return
     }
     haptics.success()
-    setJoined((j) => ({ ...j, [id]: { progress: 0, completed_at: null } }))
+    setJustJoined(id)
+    setJoined((j) => ({ ...j, [id]: j[id] ?? { progress: 0, completed_at: null } }))
   }
 
   const now = Date.now()
@@ -130,11 +144,18 @@ export default function ChallengesScreen() {
           ) : (
             active.map((c) => {
               const mine = joined[c.id]
+              const how = HOW_TO[c.requirement_type] ?? FALLBACK_HOW
               const pct = mine ? Math.min(1, mine.progress / Math.max(1, c.requirement_count)) : 0
               return (
                 <View key={c.id} style={[card, styles.challenge, mine?.completed_at ? styles.done : null]}>
                   <View style={styles.rowBetween}>
                     <Text style={[type.subhead, styles.flex1]}>{c.title}</Text>
+                    {mine && !mine.completed_at && (
+                      <View style={styles.joinedChip}>
+                        <Check size={12} color={colors.onInk} strokeWidth={3} />
+                        <Text style={styles.joinedText}>Joined</Text>
+                      </View>
+                    )}
                     <Text style={styles.xp}>+{c.xp_reward} XP</Text>
                   </View>
                   {c.description ? <Text style={type.small}>{c.description}</Text> : null}
@@ -143,16 +164,41 @@ export default function ChallengesScreen() {
                     <Text style={type.caption}>{timeLeft(c.end_date)}</Text>
                   </View>
                   {mine ? (
-                    <View style={styles.progressRow}>
-                      <View style={styles.track}>
-                        <View style={[styles.fill, { width: `${Math.max(3, pct * 100)}%` }]} />
+                    <>
+                      <View style={styles.progressRow}>
+                        <View style={styles.track}>
+                          <View style={[styles.fill, { width: `${Math.max(3, pct * 100)}%` }]} />
+                        </View>
+                        <Text style={type.smallStrong}>
+                          {mine.completed_at ? 'Completed' : `${mine.progress} of ${c.requirement_count}`}
+                        </Text>
                       </View>
-                      <Text style={type.smallStrong}>
-                        {mine.completed_at ? 'Completed' : `${mine.progress}/${c.requirement_count}`}
-                      </Text>
-                    </View>
+                      {!mine.completed_at && (
+                        <>
+                          {justJoined === c.id && (
+                            <Banner tone="success" message={`You’re in! ${how.tip} Progress counts from now.`} />
+                          )}
+                          <View style={styles.howRow}>
+                            <Text style={[type.caption, styles.flex1]}>
+                              {mine.progress} {how.unit} · {how.tip}
+                            </Text>
+                            <Pressable
+                              onPress={() => navigation.navigate('Tabs', { screen: how.tab })}
+                              style={({ pressed }) => [styles.howBtn, pressed && styles.pressed]}
+                              accessibilityRole="button"
+                            >
+                              <Text style={styles.howBtnText}>{how.cta}</Text>
+                              <ChevronRight size={14} color={colors.ink} />
+                            </Pressable>
+                          </View>
+                        </>
+                      )}
+                    </>
                   ) : (
-                    <Button label="Join challenge" onPress={() => join(c.id)} loading={joining === c.id} />
+                    <>
+                      <Button label="Join challenge" onPress={() => join(c.id)} loading={joining === c.id} />
+                      {joinError?.id === c.id && <Banner tone="error" message={joinError.message} />}
+                    </>
                   )}
                 </View>
               )
@@ -254,6 +300,11 @@ const styles = StyleSheet.create({
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   track: { flex: 1, height: 8, borderRadius: 4, backgroundColor: colors.sunk, overflow: 'hidden' },
   fill: { height: '100%', backgroundColor: colors.ink, borderRadius: 4 },
+  joinedChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.success, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 3 },
+  joinedText: { color: colors.onInk, fontSize: 12, fontFamily: fonts.bold },
+  howRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  howBtn: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 44, paddingLeft: 12, paddingRight: 8, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card },
+  howBtnText: { color: colors.ink, fontSize: 13, fontFamily: fonts.semibold },
   board: { borderRadius: radius.lg, overflow: 'hidden' },
   duelRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: radius.lg },
   invite: { borderColor: colors.ink, borderWidth: 1.5 },

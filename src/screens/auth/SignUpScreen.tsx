@@ -8,6 +8,7 @@ import { colors, fonts, type, hitSlop } from '../../theme'
 import Button from '../../components/ui/Button'
 import TextField from '../../components/ui/TextField'
 import Banner from '../../components/ui/Banner'
+import { openLegal, PRIVACY_URL, TERMS_URL } from '../../lib/legal'
 import BrandMark from '../../components/ui/BrandMark'
 
 type Props = StackScreenProps<AuthStackParamList, 'SignUp'>
@@ -118,6 +119,17 @@ export default function SignUpScreen({ navigation }: Props) {
           />
 
           <Button label="Create account" onPress={handleSignUp} loading={loading} style={styles.submit} />
+          <Text style={[type.caption, styles.legal]}>
+            By creating an account you agree to the{' '}
+            <Text style={styles.legalLink} onPress={() => openLegal(TERMS_URL)} accessibilityRole="link">
+              Terms of Service
+            </Text>{' '}
+            and{' '}
+            <Text style={styles.legalLink} onPress={() => openLegal(PRIVACY_URL)} accessibilityRole="link">
+              Privacy Policy
+            </Text>
+            .
+          </Text>
         </View>
 
         <Pressable
@@ -142,6 +154,8 @@ const styles = StyleSheet.create({
   sub: { marginTop: 12 },
   form: { gap: 18 },
   submit: { marginTop: 6 },
+  legal: { textAlign: 'center', lineHeight: 18 },
+  legalLink: { color: colors.ink, fontFamily: fonts.bold, textDecorationLine: 'underline' },
   switchRow: { alignItems: 'center', marginTop: 28, paddingVertical: 8 },
   switchLink: { color: colors.ink, fontFamily: fonts.bold, textDecorationLine: 'underline' },
   pressed: { opacity: 0.6 },

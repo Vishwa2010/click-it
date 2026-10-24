@@ -69,7 +69,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
   },
-  pillActive: { backgroundColor: colors.ink, borderColor: colors.ink },
+  // Light edge keeps the active pill visible over the dark space background when zoomed out
+  pillActive: { backgroundColor: colors.ink, borderColor: colors.line },
   pressed: { opacity: 0.8 },
   label: { color: colors.ink, fontSize: 14, fontFamily: fonts.semibold },
   labelActive: { color: colors.onInk },

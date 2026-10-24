@@ -20,6 +20,7 @@ import { useUserStore } from '../store/useUserStore'
 import { useProfileData } from '../hooks/useProfileData'
 import { supabase } from '../lib/supabase'
 import { shotAlertsEnabled, setShotAlerts } from '../lib/shotAlerts'
+import { openLegal, PRIVACY_URL, TERMS_URL } from '../lib/legal'
 import { RANK_THRESHOLDS, getProgressToNextRank, getXPToNextRank } from '../lib/xp'
 import { colors, fonts, radius, type, card, explorerRankColors, hitSlop } from '../theme'
 import { ExplorerRank } from '../types/user'
@@ -100,6 +101,8 @@ export default function ProfileScreen() {
       ...(userId
         ? [{ text: alertsOn ? 'Turn off golden-hour alerts' : 'Turn on golden-hour alerts', onPress: () => toggleAlerts(!alertsOn, userId) }]
         : []),
+      { text: 'Privacy policy', onPress: () => openLegal(PRIVACY_URL) },
+      { text: 'Terms of service', onPress: () => openLegal(TERMS_URL) },
       { text: 'Sign out', style: 'destructive', onPress: confirmSignOut },
       { text: 'Cancel', style: 'cancel' },
     ])

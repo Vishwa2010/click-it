@@ -54,6 +54,7 @@ export default function ProfileWorldMap({ spots, height }: Props) {
       <MapboxGL.MapView
         style={StyleSheet.absoluteFill}
         styleURL="mapbox://styles/mapbox/light-v11"
+        projection="globe"
         scrollEnabled={false}
         zoomEnabled={false}
         rotateEnabled={false}

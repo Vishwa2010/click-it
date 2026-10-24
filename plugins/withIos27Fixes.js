@@ -2,7 +2,7 @@
 // Applied on every `expo prebuild`, so the generated ios/ folder never needs hand edits.
 //   1. Raises pods below iOS 15 to 15.0 (Xcode 27 rejects lower deployment targets)
 //   2. Adopts the UIScene lifecycle (iOS 27 terminates apps that don't)
-const { withPodfile, withPodfileProperties, withInfoPlist, withAppDelegate } = require('expo/config-plugins')
+const { withPodfile, withInfoPlist, withAppDelegate } = require('expo/config-plugins')
 const { mergeContents } = require('@expo/config-plugins/build/utils/generateCode')
 
 const PODFILE_SNIPPET = `    installer.pods_project.targets.each do |target|
@@ -112,10 +112,18 @@ function withSceneDelegate(config) {
 }
 
 // Expo's downloadable precompiled modules are built with an older Swift than Xcode 27.1's,
-// so build them from source (slower first build, but works with whatever Xcode is installed)
+// so always build them from source. The Expo template sets this flag after config plugins run,
+// so the override goes straight into the Podfile, after the template's default.
 function withSourceBuiltExpoModules(config) {
-  return withPodfileProperties(config, (cfg) => {
-    cfg.modResults.EXPO_USE_PRECOMPILED_MODULES = 'false'
+  return withPodfile(config, (cfg) => {
+    cfg.modResults.contents = mergeContents({
+      tag: 'clickit-source-built-expo-modules',
+      src: cfg.modResults.contents,
+      newSrc: "ENV['EXPO_USE_PRECOMPILED_MODULES'] = '0'",
+      anchor: /^ENV\['EXPO_USE_PRECOMPILED_MODULES'\] \|\|= '1'/,
+      offset: 1,
+      comment: '#',
+    }).contents
     return cfg
   })
 }

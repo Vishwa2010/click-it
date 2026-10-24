@@ -1,27 +1,26 @@
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  ScrollView,
-} from 'react-native'
+import { View, Text, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import { useState } from 'react'
 import { StackScreenProps } from '@react-navigation/stack'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AuthStackParamList } from '../../navigation/types'
 import { supabase } from '../../lib/supabase'
+import { colors, fonts, type, hitSlop } from '../../theme'
+import Button from '../../components/ui/Button'
+import TextField from '../../components/ui/TextField'
+import Banner from '../../components/ui/Banner'
+import { openLegal, PRIVACY_URL, TERMS_URL } from '../../lib/legal'
+import BrandMark from '../../components/ui/BrandMark'
 
 type Props = StackScreenProps<AuthStackParamList, 'SignUp'>
 
 export default function SignUpScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
 
   async function handleSignUp() {
     if (!email.trim() || !password || !confirm) {
@@ -38,156 +37,126 @@ export default function SignUpScreen({ navigation }: Props) {
     }
     setLoading(true)
     setError(null)
-    const { error: authError } = await supabase.auth.signUp({
+    setPendingEmail(null)
+    const { data, error: authError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
+      // The confirmation link lands on our hosted "Email confirmed" page
+      options: { emailRedirectTo: 'https://vishwa2010.github.io/click-it/email-confirmed.html' },
     })
     setLoading(false)
     if (authError) {
       setError(authError.message)
       return
     }
+    // Email confirmation is on: no session until the user taps the link in their inbox
+    if (!data.session) {
+      setPendingEmail(email.trim())
+      return
+    }
     // RootNavigator's auth listener will pick up the new session and route
     // to Onboarding because the user row won't have a username yet
   }
 
+  const mismatch = confirm.length > 0 && confirm !== password
+
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
-        <View style={styles.header}>
-          <Text style={styles.logo}>📷</Text>
-          <Text style={styles.appName}>ClickIt</Text>
-          <Text style={styles.tagline}>Find the shot. Own the spot.</Text>
+        <BrandMark />
+
+        <View style={styles.hero}>
+          <Text style={type.display}>Start{'\n'}exploring.</Text>
+          <Text style={[type.body, styles.sub]}>Create an account to pin spots and claim them as Founder.</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.title}>Create account</Text>
-
-          {error && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
+        <View style={styles.form}>
+          {error && <Banner tone="error" message={error} />}
+          {pendingEmail && (
+            <Banner
+              tone="success"
+              title="Check your email"
+              message={`We sent a confirmation link to ${pendingEmail}. Tap it, then come back and log in.`}
+            />
           )}
 
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
+            label="Email"
             value={email}
             onChangeText={setEmail}
             placeholder="you@example.com"
-            placeholderTextColor="#A8B2C1"
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
+            textContentType="emailAddress"
           />
-
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
+            label="Password"
             value={password}
             onChangeText={setPassword}
             placeholder="At least 8 characters"
-            placeholderTextColor="#A8B2C1"
             secureTextEntry
             autoComplete="new-password"
+            textContentType="newPassword"
+            hint={password.length > 0 && password.length < 8 ? `${8 - password.length} more characters` : undefined}
           />
-
-          <Text style={styles.label}>Confirm Password</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
+            label="Confirm password"
             value={confirm}
             onChangeText={setConfirm}
-            placeholder="••••••••"
-            placeholderTextColor="#A8B2C1"
+            placeholder="Repeat your password"
             secureTextEntry
             autoComplete="new-password"
+            textContentType="newPassword"
+            invalid={mismatch}
+            hint={mismatch ? 'Passwords don’t match yet' : undefined}
+            returnKeyType="go"
+            onSubmitEditing={handleSignUp}
           />
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleSignUp}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
-            )}
-          </TouchableOpacity>
+          <Button label="Create account" onPress={handleSignUp} loading={loading} style={styles.submit} />
+          <Text style={[type.caption, styles.legal]}>
+            By creating an account you agree to the{' '}
+            <Text style={styles.legalLink} onPress={() => openLegal(TERMS_URL)} accessibilityRole="link">
+              Terms of Service
+            </Text>{' '}
+            and{' '}
+            <Text style={styles.legalLink} onPress={() => openLegal(PRIVACY_URL)} accessibilityRole="link">
+              Privacy Policy
+            </Text>
+            .
+          </Text>
         </View>
 
-        <TouchableOpacity
+        <Pressable
           onPress={() => navigation.navigate('Login')}
-          style={styles.switchRow}
+          style={({ pressed }) => [styles.switchRow, pressed && styles.pressed]}
+          hitSlop={hitSlop}
+          accessibilityRole="link"
         >
-          <Text style={styles.switchText}>
-            Already have an account?{' '}
-            <Text style={styles.switchLink}>Log in</Text>
+          <Text style={type.small}>
+            Already have an account? <Text style={styles.switchLink}>Log in</Text>
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#1A1A2E' },
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 48,
-  },
-  header: { alignItems: 'center', marginBottom: 40 },
-  logo: { fontSize: 56, marginBottom: 8 },
-  appName: { color: '#FF6B35', fontSize: 32, fontWeight: 'bold', letterSpacing: 1 },
-  tagline: { color: '#A8B2C1', fontSize: 14, marginTop: 4 },
-  card: {
-    backgroundColor: '#0F3460',
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  title: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  errorBanner: {
-    backgroundColor: 'rgba(231,76,60,0.15)',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(231,76,60,0.3)',
-  },
-  errorText: { color: '#E74C3C', fontSize: 14 },
-  label: { color: '#A8B2C1', fontSize: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: {
-    backgroundColor: '#16213E',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: '#FFFFFF',
-    fontSize: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  button: {
-    backgroundColor: '#FF6B35',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  switchRow: { alignItems: 'center', marginTop: 24 },
-  switchText: { color: '#A8B2C1', fontSize: 14 },
-  switchLink: { color: '#FF6B35', fontWeight: '600' },
+  flex: { flex: 1, backgroundColor: colors.paper },
+  container: { flexGrow: 1, paddingHorizontal: 24 },
+  hero: { marginTop: 48, marginBottom: 32 },
+  sub: { marginTop: 12 },
+  form: { gap: 18 },
+  submit: { marginTop: 6 },
+  legal: { textAlign: 'center', lineHeight: 18 },
+  legalLink: { color: colors.ink, fontFamily: fonts.bold, textDecorationLine: 'underline' },
+  switchRow: { alignItems: 'center', marginTop: 28, paddingVertical: 8 },
+  switchLink: { color: colors.ink, fontFamily: fonts.bold, textDecorationLine: 'underline' },
+  pressed: { opacity: 0.6 },
 })

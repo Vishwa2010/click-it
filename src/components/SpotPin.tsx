@@ -1,13 +1,10 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { View, StyleSheet } from 'react-native'
+import { Camera } from 'lucide-react-native'
 import { SpotRank } from '../types/spot'
+import { colors, spotRankColors } from '../theme'
 
-export const RANK_COLORS: Record<SpotRank, string> = {
-  undiscovered: '#A8B2C1',
-  hidden_gem: '#2ECC71',
-  popular: '#3498DB',
-  iconic: '#F39C12',
-  legendary: '#E74C3C',
-}
+// Kept as a named export for existing imports
+export const RANK_COLORS = spotRankColors
 
 interface Props {
   rank: SpotRank
@@ -15,43 +12,42 @@ interface Props {
 }
 
 export default function SpotPin({ rank, selected = false }: Props) {
-  const color = RANK_COLORS[rank]
   return (
-    <View style={[styles.pin, { backgroundColor: color + 'CC' }, selected && styles.selected]}>
-      <Text style={styles.icon}>📷</Text>
-      <View style={[styles.dot, { backgroundColor: color }]} />
+    <View style={[styles.pin, selected && styles.selected]}>
+      <Camera size={18} color={selected ? colors.onInk : colors.ink} strokeWidth={2.2} />
+      <View style={[styles.dot, { backgroundColor: spotRankColors[rank] }]} />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   pin: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.35)',
-    shadowColor: '#000',
+    backgroundColor: colors.card,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
+    shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 5,
-    elevation: 6,
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 4,
   },
   selected: {
-    borderColor: '#FFFFFF',
-    borderWidth: 3,
-    transform: [{ scale: 1.18 }],
+    backgroundColor: colors.ink,
+    transform: [{ scale: 1.15 }],
   },
-  icon: { fontSize: 20, lineHeight: 24 },
   dot: {
     position: 'absolute',
-    bottom: -6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: '#1A1A2E',
+    top: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.card,
   },
 })

@@ -1,9 +1,16 @@
 import Constants from 'expo-constants'
 
-const cloudName = Constants.expoConfig?.extra?.cloudinaryCloudName as string
-const uploadPreset = Constants.expoConfig?.extra?.cloudinaryUploadPreset as string
+const cloudName = (Constants.expoConfig?.extra?.cloudinaryCloudName as string | undefined) || ''
+const uploadPreset = (Constants.expoConfig?.extra?.cloudinaryUploadPreset as string | undefined) || ''
 
+export const isCloudinaryConfigured = Boolean(cloudName && uploadPreset)
+
+// Uploads a local JPEG (already compressed and EXIF-free — see lib/photo.ts) via an unsigned preset
 export async function uploadPhoto(uri: string): Promise<string> {
+  if (!isCloudinaryConfigured) {
+    throw new Error('Photo uploads are not set up yet (missing Cloudinary keys).')
+  }
+
   const formData = new FormData()
   formData.append('file', { uri, type: 'image/jpeg', name: 'photo.jpg' } as unknown as Blob)
   formData.append('upload_preset', uploadPreset)

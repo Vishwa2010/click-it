@@ -9,7 +9,7 @@ export type AuthStackParamList = {
 export type TabParamList = {
   Map: undefined
   Explore: undefined
-  Upload: undefined
+  Upload: { spotId?: string } | undefined
   Challenges: undefined
   Profile: undefined
 }
@@ -19,6 +19,7 @@ export type RootStackParamList = {
   Spot: { spotId: string }
   Photographer: { userId: string }
   RouteBuilder: undefined
-  ShotDuel: { duelId?: string }
+  ShotDuel: { duelId?: string; spotId?: string }
   ARCompass: undefined
+  EditProfile: undefined
 }

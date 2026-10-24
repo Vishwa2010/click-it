@@ -302,47 +302,58 @@ export interface Duel {
 
 ## Design System
 
+Beige & black — "paper and ink". Exaggerated minimalism: oversized bold type, lots of space,
+one restrained accent. All tokens live in `src/theme/index.ts` — import them, never hard-code hex values.
+Use the `ui-ux-pro-max` skill for every UI change.
+
 ### Colors
 
 ```
-Primary orange:    #FF6B35
-Dark background:   #1A1A2E
-Surface:           #16213E
-Card:              #0F3460
-Text primary:      #FFFFFF
-Text secondary:    #A8B2C1
-Border:            rgba(255,255,255,0.1)
+Paper (background):   #F5F0E8
+Sunk (inputs/wells):  #EDE7DC
+Card:                 #FFFDF9
+Ink (text, buttons):  #1A1714
+Ink 2 (secondary):    #5C554C
+Muted (captions):     #6F675C
+Line (borders):       #DDD5C8
+On ink (text):        #F5F0E8
+Accent (sparingly):   #A84A26   — live / golden-hour moments only
+Success / Error:      #3D6B37 / #A3361F
 ```
 
 Explorer rank colors:
 ```
-Bronze:   #CD7F32
-Silver:   #C0C0C0
-Gold:     #FFD700
-Elite:    #9B59B6
-Legend:   #FF6B35
+Bronze:   #8C5A2B
+Silver:   #6E6E6E
+Gold:     #876A14
+Elite:    #5B4A7A
+Legend:   #1A1714
 ```
 
 Spot rank colors:
 ```
-Undiscovered:  #A8B2C1
-Hidden gem:    #2ECC71
-Popular:       #3498DB
-Iconic:        #F39C12
-Legendary:     #E74C3C
+Undiscovered:  #6F675C
+Hidden gem:    #4A6B3F
+Popular:       #3E5C76
+Iconic:        #8A5F12
+Legendary:     #9B3423
 ```
 
+Every text/background pair meets WCAG AA (4.5:1).
+
 ### Typography
-- Headers: 24px bold
-- Subheaders: 18px semibold
-- Body: 14px regular
-- Caption: 12px regular
-- Dark theme throughout — all text white or `#A8B2C1`
+- Font: Plus Jakarta Sans (matches the support / reset-password web pages), loaded in `App.tsx`
+- Weight comes from the font family (`fonts.bold` etc.) — never `fontWeight`
+- Use the `type` presets: display 44, title 30, headline 20, body 16, small 14, caption 12, eyebrow 12 caps
 
 ### Components
-- Cards: `#0F3460` bg, `border-radius: 16px`, `border: 1px rgba(255,255,255,0.08)`
-- Buttons: `#FF6B35` bg, `border-radius: 12px`, 14px semibold white text
-- Bottom sheets: `#16213E` bg, drag handle, `border-radius` top 24px
+- Buttons: `components/ui/Button` — ink-filled primary, outlined secondary; Pressable with press feedback
+- Inputs: `components/ui/TextField` — labelled, visible focus ring
+- Messages: `components/ui/Banner` (error / success / info)
+- Cards: card colour, radius 20, 1px line border
+- Icons: Lucide (`lucide-react-native`) only — no emoji as icons
+- Touch targets ≥ 44pt (`TOUCH`, `hitSlop` from the theme)
+- Respect Reduce Motion for looping/decorative animation
 
 ---
 
@@ -431,6 +442,7 @@ spot_twins, notifications
 - Strip all EXIF data EXCEPT GPS coordinates before display (privacy — never expose camera serial numbers)
 - Never show exact coordinates for spots flagged as private property — show approximate area only
 - Write loading and error states for every data fetch — never leave a screen blank
+- Never hard-code colours or fonts — use `src/theme`
 - Run `typecheck` and `lint` after every change — fix all errors before stopping
 
 ---

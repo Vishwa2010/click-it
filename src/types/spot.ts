@@ -40,6 +40,9 @@ export interface Spot {
   best_time_end: string
   gear_recommendation: string
   created_at: string
+  // Filled from reverse geocoding when the spot is founded (may be empty)
+  city?: string
+  country?: string
 }
 
 export interface SpotPhoto {

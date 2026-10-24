@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native'
+import { View, Text, Pressable, StyleSheet, StyleProp, ViewStyle, Linking } from 'react-native'
 import { Sun, Cloud, CloudRain, CloudDrizzle, CloudSnow, CloudLightning, CloudFog, LucideIcon } from 'lucide-react-native'
 import { Coords, formatCountdown, nextGoldenHour, useNow } from '../lib/goldenHour'
 import { Sky, formatTemp, useWeather } from '../lib/weather'
-import { colors, fonts, radius } from '../theme'
+import { colors, fonts, radius, hitSlop } from '../theme'
 
 interface Props {
   coords: Coords
@@ -39,19 +39,29 @@ export default function ConditionsWidget({ coords, isUserLocation, style }: Prop
   return (
     <View
       style={[styles.widget, style]}
-      pointerEvents="none"
-      accessibilityRole="text"
-      accessibilityLabel={[title, timing, conditions].filter(Boolean).join(', ')}
+      pointerEvents="box-none"
     >
       <View style={[styles.iconWrap, live && styles.iconLive]}>
         <Icon size={18} color={live ? colors.onInk : colors.ink} strokeWidth={2.2} />
       </View>
       <View>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.sub} numberOfLines={1}>
-          {timing}
-          {conditions ? ` · ${conditions}` : ''}
-        </Text>
+        <View accessible accessibilityRole="text" accessibilityLabel={[title, timing, conditions].filter(Boolean).join(', ')}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.sub} numberOfLines={1}>
+            {timing}
+            {conditions ? ` · ${conditions}` : ''}
+          </Text>
+        </View>
+        {/* Required attribution for OpenWeather's free plan: visible, linked to openweathermap.org */}
+        {weather && (
+          <Pressable
+            onPress={() => Linking.openURL('https://openweathermap.org/').catch(() => {})}
+            hitSlop={hitSlop}
+            accessibilityRole="link"
+          >
+            <Text style={styles.credit}>Weather data provided by OpenWeather</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   )
@@ -86,4 +96,5 @@ const styles = StyleSheet.create({
   iconLive: { backgroundColor: colors.accent },
   title: { color: colors.ink, fontSize: 14, fontFamily: fonts.bold },
   sub: { color: colors.ink2, fontSize: 12, fontFamily: fonts.medium, marginTop: 1 },
+  credit: { color: colors.muted, fontSize: 10, fontFamily: fonts.medium, marginTop: 2, textDecorationLine: 'underline' },
 })

@@ -40,8 +40,8 @@
       <h2>The short version</h2>
       <ul>
         <li>We collect what the app needs to work: your account details, the spots and photos you post, and your activity in the app.</li>
-        <li>Spots, photos, your username and your profile are <strong>public</strong> to other ClickIt users.</li>
-        <li>Your live location stays on your phone. We only store the location of spots you choose to publish.</li>
+        <li>Spots and photos you post are <strong>public</strong>: anyone can see them, even without an account. Your profile is visible to other ClickIt users.</li>
+        <li>ClickIt does not store your location history. We store the location of spots you choose to publish, and send your approximate location to our map and weather providers so those features work.</li>
         <li>No ads, no tracking for advertising, and we never sell your data.</li>
         <li>Email <a href="mailto:clickit.app01@gmail.com">clickit.app01@gmail.com</a> to see or delete your data.</li>
       </ul>
@@ -58,15 +58,20 @@
 
     <h2>Information collected when you use ClickIt</h2>
     <ul>
-      <li><strong>Spot location:</strong> when you publish a photo, we read the GPS position saved in the photo (or the pin you drop) and store it with the spot, along with the city and country. <strong>Spot locations are public.</strong> Before uploading, we remove all other photo metadata, such as the camera's serial number.</li>
-      <li><strong>Your current location:</strong> used only on your device, to center the map, show distances, plan photo walks, point the AR Compass and time golden-hour alerts. ClickIt does not store your location history.</li>
+      <li><strong>Spot location:</strong> when you publish a photo, your phone reads the GPS position saved in the photo (or the pin you drop), and we store it with the spot, along with its city and country. <strong>Spot locations are public.</strong> The photo file itself is re-saved before upload, which removes all of its hidden metadata (including GPS and camera serial numbers).</li>
+      <li><strong>Your current location</strong> (only if you allow it): used on your phone to center the map, show distances, plan photo walks, point the AR Compass and time golden-hour alerts. To show local weather, your location rounded to about 1 km is sent to OpenWeather. ClickIt does not store your current location or your location history.</li>
+      <li><strong>Technical data:</strong> like most apps, the services ClickIt uses automatically log technical details of each request, such as your IP address, device type and time.</li>
       <li><strong>Activity:</strong> spots you save, spots you navigate to, upvotes, people you follow, challenges you join, Shot Duels and votes, and the XP, badges and rank you earn.</li>
       <li><strong>Camera:</strong> used to take photos for new spots and for the AR Compass live view. The AR Compass view is not recorded or uploaded.</li>
       <li><strong>Notifications:</strong> if you turn on golden-hour alerts, they are scheduled on your device. Your on/off choice is saved on your device.</li>
     </ul>
 
     <h2>What other users can see</h2>
-    <p>Your username, profile photo, bio, rank, XP, badges, follower counts, the spots you found and the photos you posted are visible to other ClickIt users, and your rank can appear on leaderboards. The spots you save and the challenges you join are private to you.</p>
+    <ul>
+      <li><strong>Anyone, including people without an account:</strong> spots (name, description, location, tags, difficulty) and the photos posted to them, with the gear you entered and which account posted them.</li>
+      <li><strong>Other ClickIt users:</strong> your username, profile photo, bio, rank, XP, badges, who you follow and who follows you, which photos you upvote, the spots you founded, and Shot Duels you take part in. Your rank can appear on leaderboards.</li>
+      <li><strong>Only you:</strong> your email address, the spots you save, the spots you navigate to, the challenges you join and your progress, and how you voted in Shot Duels.</li>
+    </ul>
 
     <h2>How we use information</h2>
     <ul>
@@ -84,11 +89,17 @@
         <tr><th>Service</th><th>What it does</th><th>What it receives</th></tr>
         <tr><td>Supabase</td><td>Accounts, login and the database</td><td>Your account, profile, spots and activity</td></tr>
         <tr><td>Cloudinary</td><td>Stores and serves photos</td><td>The photos you upload (with personal metadata removed)</td></tr>
-        <tr><td>Mapbox</td><td>Map tiles and walking directions</td><td>The map area you are viewing and the points of a planned walk</td></tr>
-        <tr><td>OpenWeather</td><td>Live weather</td><td>Approximate coordinates of where weather is shown</td></tr>
+        <tr><td>Mapbox</td><td>Map tiles and walking directions</td><td>The map area you are viewing, the points of a planned walk, and de-identified location data used to improve its maps (see below)</td></tr>
+        <tr><td>OpenWeather</td><td>Live weather</td><td>Your location rounded to about 1 km, or the map area you are looking at</td></tr>
         <tr><td>Apple / Google</td><td>Looking up the city and country of a spot; opening directions</td><td>The coordinates of that spot</td></tr>
       </table>
     </div>
+
+    <h2>Map data collected by Mapbox</h2>
+    <p>ClickIt's map is provided by Mapbox. The Mapbox map software collects de-identified device location data ("telemetry") to improve its maps, and it does not collect advertising identifiers. You can turn this off at any time: tap the <strong>ⓘ</strong> button at the bottom of the map, then choose the telemetry setting. Learn more at <a href="https://www.mapbox.com/telemetry">mapbox.com/telemetry</a>. This is the only information a company collects through ClickIt for its own purposes. No one uses ClickIt to track you across other apps or websites.</p>
+
+    <h2>Do Not Track</h2>
+    <p>ClickIt does not track you across other apps or websites, and it treats every user the same whether or not a "Do Not Track" signal is sent.</p>
 
     <h2>How long we keep information</h2>
     <p>We keep your account and content while your account exists. If you ask us to delete your account, we delete your profile, photos and activity. Spots you founded may stay on the map without your name, so other people's photos of them keep working.</p>
@@ -98,6 +109,7 @@
       <li>Edit your username, photo and bio any time in <strong>Profile → Settings → Edit profile</strong>.</li>
       <li>Turn location, camera and notification access on or off in your phone's Settings. ClickIt still works with these off, with fewer features.</li>
       <li>Turn golden-hour alerts off in <strong>Profile → Settings</strong>.</li>
+      <li>Turn off Mapbox map telemetry with the <strong>ⓘ</strong> button on the map.</li>
       <li>To get a copy of your data, or to delete your account and data, email <a href="mailto:clickit.app01@gmail.com">clickit.app01@gmail.com</a> from your account's email address.</li>
     </ul>
 
